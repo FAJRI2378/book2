@@ -9,10 +9,14 @@ if (isset($_POST['submit'])) {
     $author      = $_POST['author'];
     $description = $_POST['description'];
     $price       = $_POST['price'];
+    $stock       = $_POST['stock']; // ⬅️ Tambahkan ini
     $category_id = $_POST['category_id'];
 
-    mysqli_query($conn, "UPDATE books SET title='$title', author='$author', description='$description', price='$price', category_id='$category_id' WHERE id = $id");
-    header("Location: index.php");
+    mysqli_query($conn, "UPDATE books SET title='$title', author='$author', description='$description', price='$price', stock='$stock', category_id='$category_id' WHERE id = $id");
+
+    header("Location: /book2/books.php");
+exit;
+
 }
 ?>
 
@@ -23,6 +27,10 @@ if (isset($_POST['submit'])) {
     Deskripsi:<br>
     <textarea name="description"><?= $data['description'] ?></textarea><br><br>
     Harga: <input type="number" name="price" value="<?= $data['price'] ?>"><br><br>
+    
+    <!-- ✅ Tambahkan input stok -->
+    Stok: <input type="number" name="stock" value="<?= $data['stock'] ?>" required><br><br>
+
     Kategori:
     <select name="category_id">
         <?php while ($cat = mysqli_fetch_assoc($categories)) { ?>
@@ -31,6 +39,7 @@ if (isset($_POST['submit'])) {
             </option>
         <?php } ?>
     </select><br><br>
-    <button type="submit" name="submit">Update</button>
+
+    <button type="submit" name="submit" >Update</button>
 </form>
 <p><a href="index.php">Kembali ke Daftar Buku</a></p>

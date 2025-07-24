@@ -32,7 +32,7 @@ if (isset($_POST['submit'])) {
               VALUES ('$title', '$author', '$description', $price, $stock, $category_id, '$image_name')";
 
     if (mysqli_query($conn, $query)) {
-        header("Location: index.php");
+        header("Location: ../books.php");
         exit;
     } else {
         echo "Gagal menyimpan data buku: " . mysqli_error($conn);

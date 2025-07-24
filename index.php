@@ -18,51 +18,48 @@ if ($search) {
 $result = mysqli_query($conn, $query);
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Book Management</title>
-</head>
-<body>
-    <h1>Welcome to the BookStore</h1>
+<h2>Daftar Buku</h2>
 
-    <form method="GET">
-        <input type="text" name="search" placeholder="Cari buku..." value="<?= htmlspecialchars($search) ?>">
-        <button type="submit">Cari</button>
-    </form>
+<a href="cart_view.php">Lihat Keranjang 🛒</a><br><br>
 
-    <h2>Daftar Buku</h2>
-    <table border="1" cellpadding="8">
-        <tr>
-            <th>Judul</th>
-            <th>Penulis</th>
-            <th>Harga</th>
-            <th>Kategori</th>
-            <th>Gambar</th>
-            
-        </tr>
-        <?php if (mysqli_num_rows($result) > 0): ?>
-            <?php while ($row = mysqli_fetch_assoc($result)) { ?>
-                <tr>
-                    <td><?= $row['title'] ?></td>
-                    <td><?= $row['author'] ?></td>
-                    <td>Rp<?= number_format($row['price']) ?></td>
-                    <td><?= $row['category'] ?></td>
-                      <td>
-                        <?php if (!empty($row['image'])): ?>
-                            <img src="uploads/<?= $row['image'] ?>" alt="<?= $row['title'] ?>" width="80">
-                        <?php else: ?>
-                            <span>Tidak ada gambar</span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-            <?php } ?>
-        <?php else: ?>
+<table border="1" cellpadding="8">
+    <tr>
+        <th>Judul</th>
+        <th>Penulis</th>
+        <th>Harga</th>
+        <th>Kategori</th>
+        <th>Gambar</th>
+        <th>Aksi</th> <!-- Tambahkan kolom Aksi -->
+    </tr>
+    <?php if (mysqli_num_rows($result) > 0): ?>
+        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
             <tr>
-                <td colspan="5">Tidak ada buku ditemukan.</td>
+                <td><?= $row['title'] ?></td>
+                <td><?= $row['author'] ?></td>
+                <td>Rp<?= number_format($row['price']) ?></td>
+                <td><?= $row['category'] ?></td>
+                <td>
+                    <?php if (!empty($row['image'])): ?>
+                        <img src="uploads/<?= $row['image'] ?>" alt="<?= $row['title'] ?>" width="80">
+                    <?php else: ?>
+                        <span>Tidak ada gambar</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <form method="POST" action="cart.php" style="display:inline;">
+                        <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
+                        <button type="submit">Tambah ke Keranjang</button>
+                    </form>
+                    <form method="POST" action="buy.php" style="display:inline;">
+                        <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
+                        <button type="submit">Beli</button>
+                    </form>
+                </td>
             </tr>
-        <?php endif; ?>
-    </table>
-</body>
-</html>
+        <?php } ?>
+    <?php else: ?>
+        <tr>
+            <td colspan="6">Tidak ada buku ditemukan.</td>
+        </tr>
+    <?php endif; ?>
+</table>

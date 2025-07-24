@@ -1,6 +1,6 @@
 <?php
-include '../../koneksi.php';
-
+include '../../koneksi.php'; // naik 3 folder dari books/delete.php
+include 'navbar.php'; // koneksi ke database
 $id = $_GET['id'];
 
 // Ambil nama file gambar terlebih dahulu
@@ -16,6 +16,6 @@ if ($image && file_exists("../../../assets/uploads/" . $image)) {
 // Hapus data dari database
 mysqli_query($conn, "DELETE FROM books WHERE id = $id");
 
-// Redirect kembali
-header("Location: index.php");
+// Redirect ke halaman daftar buku
+header("Location: /book2/admin/books.php");
 exit;
