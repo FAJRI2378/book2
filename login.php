@@ -19,7 +19,7 @@ if (isset($_POST['login'])) {
             header("Location: index.php");
         }
     } else {
-        echo "Login gagal!";
+        echo "Username atau password salah!";
     }
 }
 ?>
