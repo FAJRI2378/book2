@@ -45,7 +45,7 @@ $kategori = mysqli_query($conn, $query);
 
 <h2>Manajemen Kategori Buku</h2>
 
-<h5>ingin melihat daftar buku? <a href="../admin/books/index.php">klik sini</a></h5>
+<h5>ingin melihat daftar buku? <a href="../admin/books.php">klik sini</a></h5>
 
 <!-- Form Tambah Kategori -->
 <form method="post" style="margin-bottom:20px;">

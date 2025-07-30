@@ -19,10 +19,8 @@ if (isset($_POST['submit'])) {
         $image_name = time() . '-' . basename($_FILES["image"]["name"]);
         $target_file = $target_dir . $image_name;
 
-        if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-            // Gambar berhasil diupload
-        } else {
-            echo "Gagal upload gambar.";
+        if (!move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
+            echo "<div class='alert alert-danger'>Gagal upload gambar.</div>";
             exit;
         }
     }
@@ -35,25 +33,73 @@ if (isset($_POST['submit'])) {
         header("Location: ../books.php");
         exit;
     } else {
-        echo "Gagal menyimpan data buku: " . mysqli_error($conn);
+        echo "<div class='alert alert-danger'>Gagal menyimpan data buku: " . mysqli_error($conn) . "</div>";
     }
 }
 ?>
 
-<h2>Tambah Buku</h2>
-<form method="post" enctype="multipart/form-data">
-    Judul: <input type="text" name="title" required><br><br>
-    Penulis: <input type="text" name="author"><br><br>
-    Deskripsi:<br>
-    <textarea name="description"></textarea><br><br>
-    Harga: <input type="number" name="price" required><br><br>
-    Stok: <input type="number" name="stock" required><br><br>
-    Kategori:
-    <select name="category_id" required>
-        <?php while ($cat = mysqli_fetch_assoc($categories)) { ?>
-            <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
-        <?php } ?>
-    </select><br><br>
-    Gambar: <input type="file" name="image" accept="image/*"><br><br>
-    <button type="submit" name="submit">Simpan</button>
-</form>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Tambah Buku</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">📚 Tambah Buku Baru</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label">Judul Buku</label>
+                    <input type="text" name="title" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Penulis</label>
+                    <input type="text" name="author" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Deskripsi</label>
+                    <textarea name="description" class="form-control" rows="4"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Harga (Rp)</label>
+                    <input type="number" name="price" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Stok</label>
+                    <input type="number" name="stock" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Kategori</label>
+                    <select name="category_id" class="form-select" required>
+                        <option value="" disabled selected>-- Pilih Kategori --</option>
+                        <?php while ($cat = mysqli_fetch_assoc($categories)) { ?>
+                            <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
+                        <?php } ?>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Upload Gambar</label>
+                    <input type="file" name="image" accept="image/*" class="form-control">
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" name="submit" class="btn btn-success">💾 Simpan</button>
+                    <a href="../books.php" class="btn btn-secondary">🔙 Kembali</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
