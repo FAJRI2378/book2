@@ -217,12 +217,12 @@ $result = mysqli_query($conn, $query);
   <?php if ($row['stock'] > 0): ?>
     <form method="POST" action="cart.php">
       <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
-      <button type="submit">Tambah</button>
+      <button type="submit">Tambah Keranjang</button>
     </form>
-    <form method="POST" action="buy.php">
+    <!-- <form method="POST" action="buy.php">
       <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
       <button type="submit" style="background-color: #f59e0b;">Beli</button>
-    </form>
+    </form> -->
   <?php else: ?>
     <button disabled style="background-color: #9ca3af; color: white; padding: 6px 12px; border-radius: 6px; cursor: not-allowed;">
       Stok Habis

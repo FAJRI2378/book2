@@ -62,11 +62,12 @@ $total = 0;
                             <em>Tidak ada gambar</em>
                         <?php endif; ?>
                     </td>
-                    <td class="text-center">
-                        <form action="buy.php" method="post" class="d-inline">
-                            <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
-                            <button type="submit" class="btn btn-success btn-sm mb-1">Checkout</button>
-                        </form>
+                   <form action="buy.php" method="post" class="d-inline">
+    <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
+    <input type="number" name="jumlah" value="1" min="1" max="<?= $row['stock'] ?>" class="form-control mb-2" style="width: 80px;" required>
+    <button type="submit" class="btn btn-success btn-sm mb-1">Checkout</button>
+</form>
+
                         <form action="hapus_keranjang.php" method="post" class="d-inline">
                             <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
                             <button type="submit" class="btn btn-danger btn-sm"

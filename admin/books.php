@@ -48,6 +48,9 @@ if (!$result) {
             <li class="nav-item">
         <a class="nav-link" href="../admin/order_list.php">Pesanan</a>
         </li>
+        <li class="nav-item">
+        <a class="nav-link" href="../kategori/index.php">Kategori</a>
+        </li>
                 <ul class="navbar-nav">
         <li class="nav-item">
           <a class="nav-link text-danger" href="../logout.php">🔓 Logout</a>

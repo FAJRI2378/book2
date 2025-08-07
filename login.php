@@ -34,7 +34,7 @@ if (isset($_POST['login'])) {
         body {
             background: #f3f4f6;
             font-family: Arial, sans-serif;
-            display: flex;
+            display: flex;               
             align-items: center;
             justify-content: center;
             height: 100vh;
