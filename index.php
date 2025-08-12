@@ -30,30 +30,37 @@ $result = mysqli_query($conn, $query);
     }
     body {
       font-family: Arial, sans-serif;
-      background-color: #f3f4f6;
       margin: 0;
       padding-top: 70px; /* offset navbar */
+      color: white; /* teks kontras dengan video */
+    }
+    #bg-video {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      min-width: 100%;
+      min-height: 100%;
+      z-index: -1;
+      object-fit: cover;
+      filter: brightness(0.6); /* opsional, gelapkan video */
     }
     header {
-      background-color: #2563eb;
+      background: rgba(77, 89, 114, 0.7);
       color: white;
       padding: 40px;
       text-align: center;
+      border-radius: 10px;
     }
     .about {
       padding: 40px 20px;
-      background-color: #ffffff;
+      background-color: rgba(207, 184, 184, 0.7);
       text-align: center;
+      border-radius: 10px;
     }
     .about h2 {
       font-size: 26px;
-      color: #1f2937;
+      color: white;
       margin-bottom: 10px;
-    }
-    .about p {
-      color: #4b5563;
-      max-width: 700px;
-      margin: 0 auto;
     }
     .search-bar {
       text-align: center;
@@ -76,13 +83,13 @@ $result = mysqli_query($conn, $query);
     h2.section-title {
       text-align: center;
       margin-top: 40px;
-      color: #1f2937;
     }
     table {
       width: 90%;
       margin: 20px auto;
       border-collapse: collapse;
-      background: white;
+      background: rgba(255, 255, 255, 0.9);
+      color: black;
       border-radius: 12px;
       overflow: hidden;
     }
@@ -92,11 +99,11 @@ $result = mysqli_query($conn, $query);
       border-bottom: 1px solid #e5e7eb;
     }
     th {
-      background-color: #f9fafb;
-      color: #111827;
+      background-color: rgba(249, 250, 251, 0.9);
+      color: black;
     }
     tr:hover {
-      background-color: #f1f5f9;
+      background-color: rgba(241, 245, 249, 0.9);
     }
     img {
       max-height: 80px;
@@ -123,12 +130,18 @@ $result = mysqli_query($conn, $query);
     }
     .whatsapp a {
       text-decoration: none;
-      color: #10b981;
+      color: #00f586ff;
       font-weight: bold;
     }
   </style>
 </head>
 <body>
+
+<!-- 🎥 Video Background -->
+<video autoplay muted loop id="bg-video">
+    <source src="assets/pin.mp4" type="video/mp4">
+    Browser kamu tidak mendukung video HTML5.
+</video>
 
 <!-- ✅ Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
@@ -161,14 +174,14 @@ $result = mysqli_query($conn, $query);
 </nav>
 
 <!-- ✅ Header -->
- <section class="about" id="about">
-<header>
-  <h1>Selamat Datang di Toko Buku Online</h1>
-</header>
- </section>
+<section class="about" id="about">
+  <header>
+    <h1>Selamat Datang di Toko Buku Online</h1>
+  </header>
+</section>
 
 <!-- ✅ About Section -->
-<section class="about" id="">
+<section class="about">
   <h2>Tentang Kami</h2>
   <p>
     Toko Buku Online menyediakan berbagai buku berkualitas, dari fiksi hingga non-fiksi, buku pelajaran, dan literatur lainnya. 
@@ -213,24 +226,17 @@ $result = mysqli_query($conn, $query);
             <?php endif; ?>
           </td>
           <td>
-           <div class="aksi-btn">
-  <?php if ($row['stock'] > 0): ?>
-    <form method="POST" action="cart.php">
-      <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
-      <button type="submit">Tambah Keranjang</button>
-    </form>
-    <!-- <form method="POST" action="buy.php">
-      <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
-      <button type="submit" style="background-color: #f59e0b;">Beli</button>
-    </form> -->
-  <?php else: ?>
-    <button disabled style="background-color: #9ca3af; color: white; padding: 6px 12px; border-radius: 6px; cursor: not-allowed;">
-      Stok Habis
-    </button>
-  <?php endif; ?>
-</div>
-    
-
+            <div class="aksi-btn">
+              <?php if ($row['stock'] > 0): ?>
+                <form method="POST" action="cart.php">
+                  <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
+                  <button type="submit">Tambah Keranjang</button>
+                </form>
+              <?php else: ?>
+                <button disabled style="background-color: #9ca3af; color: white; padding: 6px 12px; border-radius: 6px; cursor: not-allowed;">
+                  Stok Habis
+                </button>
+              <?php endif; ?>
             </div>
           </td>
         </tr>
@@ -250,7 +256,6 @@ $result = mysqli_query($conn, $query);
 <div class="text-center my-4">
   <a href="admin/chat/index.php" class="btn btn-outline-success">💬 Chat Admin</a>
 </div>
-
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -30,11 +30,23 @@ $total = 0;
             object-fit: cover;
             border-radius: 6px;
         }
+        body {
+            background-color: #cfb8b8ff;
+            font-family: Arial, sans-serif;
+        }
+        .content-wrapper {
+            max-width: 800px;
+            margin: 40px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body>
 
-<div class="container mt-5">
+<div class="content-wrapper">
     <h2 class="mb-4 text-center">🛒 Keranjang Belanja</h2>
 
     <table class="table table-bordered table-hover align-middle">
@@ -57,21 +69,21 @@ $total = 0;
                     <td>Rp<?= number_format($row['price'], 0, ',', '.') ?></td>
                     <td class="text-center">
                         <?php if (!empty($row['image'])): ?>
-                            <img src="uploads/<?= $row['image'] ?>" alt="<?= $row['title'] ?>">
+                            <img src="uploads/<?= htmlspecialchars($row['image']) ?>" alt="<?= htmlspecialchars($row['title']) ?>">
                         <?php else: ?>
                             <em>Tidak ada gambar</em>
                         <?php endif; ?>
                     </td>
-                   <form action="buy.php" method="post" class="d-inline">
-    <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
-    <input type="number" name="jumlah" value="1" min="1" max="<?= $row['stock'] ?>" class="form-control mb-2" style="width: 80px;" required>
-    <button type="submit" class="btn btn-success btn-sm mb-1">Checkout</button>
-</form>
+                    <td class="text-center">
+                        <form action="buy.php" method="post" class="d-inline">
+                            <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
+                            <input type="number" name="jumlah" value="1" min="1" max="<?= $row['stock'] ?>" class="form-control mb-2" style="width: 80px;" required>
+                            <button type="submit" class="btn btn-success btn-sm mb-1">Checkout</button>
+                        </form>
 
                         <form action="hapus_keranjang.php" method="post" class="d-inline">
                             <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
-                            <button type="submit" class="btn btn-danger btn-sm"
-                                onclick="return confirm('Yakin ingin menghapus dari keranjang?')">Hapus</button>
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Yakin ingin menghapus dari keranjang?')">Hapus</button>
                         </form>
                     </td>
                 </tr>
