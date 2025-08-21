@@ -2,48 +2,128 @@
 session_start();
 include 'koneksi.php';
 
-if (!isset($_SESSION['user_id'])) {
-    die("Silakan login dulu.");
-}
+$cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
 
-$user_id = $_SESSION['user_id'];
-$book_id = $_POST['book_id'];
-$jumlah  = (int) $_POST['jumlah']; // pastikan integer
+$books = [];
+$total = 0;
 
-if ($jumlah < 1) {
-    die("Jumlah pembelian tidak valid.");
-}
-
-// Cek stok buku dulu
-$stok_query = mysqli_prepare($conn, "SELECT stock FROM books WHERE id = ?");
-mysqli_stmt_bind_param($stok_query, "i", $book_id);
-mysqli_stmt_execute($stok_query);
-$result = mysqli_stmt_get_result($stok_query);
-$book = mysqli_fetch_assoc($result);
-
-if (!$book || $book['stock'] < $jumlah) {
-    die("Stok tidak mencukupi.");
-}
-
-// Simpan ke tabel orders
-$sql = "INSERT INTO orders (user_id, book_id, jumlah, order_date) VALUES (?, ?, ?, NOW())";
-$stmt = mysqli_prepare($conn, $sql);
-mysqli_stmt_bind_param($stmt, "iii", $user_id, $book_id, $jumlah);
-mysqli_stmt_execute($stmt);
-
-// Kurangi stok buku
-$update_stock_sql = "UPDATE books SET stock = stock - ? WHERE id = ?";
-$update_stmt = mysqli_prepare($conn, $update_stock_sql);
-mysqli_stmt_bind_param($update_stmt, "ii", $jumlah, $book_id);
-mysqli_stmt_execute($update_stmt);
-
-// Hapus dari keranjang
-if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
-    if (($key = array_search($book_id, $_SESSION['cart'])) !== false) {
-        unset($_SESSION['cart'][$key]);
-        $_SESSION['cart'] = array_values($_SESSION['cart']);
+if (!empty($cart)) {
+    $ids = implode(",", array_map('intval', $cart));
+    $result = mysqli_query($conn, "SELECT * FROM books WHERE id IN ($ids)");
+    while ($row = mysqli_fetch_assoc($result)) {
+        $books[] = $row;
+        $total += $row['price'];
     }
 }
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Keranjang Belanja</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        img {
+            width: 80px;
+            height: auto;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        body {
+            background-color: #cfb8b8ff;
+            font-family: Arial, sans-serif;
+        }
+        .content-wrapper {
+            max-width: 900px;
+            margin: 40px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
 
-header("Location: cart_view.php");
-exit;
+<div class="content-wrapper">
+    <h2 class="mb-4 text-center">🛒 Keranjang Belanja</h2>
+
+    <?php if (empty($books)): ?>
+        <div class="text-center p-5">
+            <h3>Keranjang kosong</h3>
+            <a href="index.php" class="btn btn-primary mt-3">← Kembali ke Toko</a>
+        </div>
+    <?php else: ?>
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Judul</th>
+                    <th>Penulis</th>
+                    <th>Harga</th>
+                    <th>Gambar</th>
+                    <th>Checkout</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($books as $row): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($row['title']) ?></td>
+                        <td><?= htmlspecialchars($row['author']) ?></td>
+                        <td>Rp<?= number_format($row['price'], 0, ',', '.') ?></td>
+                        <td class="text-center">
+                            <?php if (!empty($row['image'])): ?>
+                                <img src="uploads/<?= htmlspecialchars($row['image']) ?>" alt="<?= htmlspecialchars($row['title']) ?>">
+                            <?php else: ?>
+                                <em>Tidak ada gambar</em>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <!-- Form checkout 1 barang -->
+                            <form action="proses_checkout.php" method="post">
+                                <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
+
+                                <div class="mb-2">
+                                    <input type="number" name="jumlah" value="1" min="1" max="<?= $row['stock'] ?>" 
+                                           class="form-control" style="width: 90px;" required>
+                                </div>
+
+                                <div class="mb-2">
+                                    <select name="payment_method" class="form-select form-select-sm" required>
+                                        <option value="">Pilih Pembayaran</option>
+                                        <option value="Transfer Bank">Transfer Bank</option>
+                                        <option value="COD">COD (Bayar di Tempat)</option>
+                                        <option value="E-Wallet">E-Wallet (OVO, DANA, GoPay)</option>
+                                    </select>
+                                </div>
+
+                                <button type="submit" class="btn btn-success btn-sm w-100">Checkout</button>
+                            </form>
+                        </td>
+                        <td class="text-center">
+                            <!-- Hapus dari keranjang -->
+                            <form action="hapus_keranjang.php" method="post" class="d-inline">
+                                <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
+                                <button type="submit" class="btn btn-danger btn-sm" 
+                                        onclick="return confirm('Yakin ingin menghapus dari keranjang?')">Hapus</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+            <tfoot>
+                <tr class="table-secondary fw-bold">
+                    <td colspan="2" class="text-end">Total (semua barang):</td>
+                    <td colspan="4">Rp<?= number_format($total, 0, ',', '.') ?></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="text-center mt-4">
+            <a href="index.php" class="btn btn-primary">← Kembali ke Daftar Buku</a>
+        </div>
+    <?php endif; ?>
+</div>
+
+</body>
+</html>

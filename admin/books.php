@@ -6,8 +6,11 @@ $result = mysqli_query($conn, "SELECT books.*, categories.name AS category FROM 
 if (!$result) {
     die("Query gagal: " . mysqli_error($conn));
 }
-?>
 
+// Ambil data About Us
+$aboutRes = mysqli_query($conn, "SELECT value FROM settings WHERE name='about'");
+$about = mysqli_fetch_assoc($aboutRes);
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -24,8 +27,7 @@ if (!$result) {
     </style>
 </head>
 <body>
-
-<!-- NAVBAR LANGSUNG DI SINI -->
+<!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
     <a class="navbar-brand" href="#">BookStore</a>
@@ -38,28 +40,41 @@ if (!$result) {
         <li class="nav-item">
           <a class="nav-link active" href="#">Daftar Buku</a>
         </li>
-         </li>
         <li class="nav-item">
           <a class="nav-link" href="list_user.php">List User</a>
         </li>
-                <li class="nav-item">
-        <a class="nav-link" href="../admin/chat/index.php">💬 Chat</a>
-        </li>
-            <li class="nav-item">
-        <a class="nav-link" href="../admin/order_list.php">Pesanan</a>
+        <li class="nav-item">
+          <a class="nav-link" href="../admin/chat/index.php">💬 Chat</a>
         </li>
         <li class="nav-item">
-        <a class="nav-link" href="../kategori/index.php">Kategori</a>
+          <a class="nav-link" href="../admin/order_list.php">Pesanan</a>
         </li>
-                <ul class="navbar-nav">
         <li class="nav-item">
-          <a class="nav-link text-danger" href="../logout.php">🔓 Logout</a>
+          <a class="nav-link" href="../kategori/index.php">Kategori</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="edit_about.php">Edit About Us</a>
+        </li>
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link text-danger" href="../logout.php">🔓 Logout</a>
+          </li>
+        </ul>
       </ul>
     </div>
   </div>
 </nav>
 
+ <!-- ABOUT US -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">ℹ️ About Us</h5>
+        </div>
+        <div class="card-body">
+            <?= nl2br(htmlspecialchars($about['value'] ?? 'Belum ada informasi About Us.')) ?>
+        </div>
+    </div>
+</div>
 <!-- ISI HALAMAN -->
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -67,10 +82,11 @@ if (!$result) {
         <a href="books/create.php" class="btn btn-primary">+ Tambah Buku</a>
     </div>
 
-    <div class="table-responsive">
+    <div class="table-responsive mb-5">
         <table class="table table-bordered table-striped align-middle">
             <thead class="table-dark">
                 <tr>
+                    <th>No</th>
                     <th>Judul</th>
                     <th>Penulis</th>
                     <th>Kategori</th>
@@ -81,30 +97,32 @@ if (!$result) {
                 </tr>
             </thead>
             <tbody>
-                <?php while ($book = mysqli_fetch_assoc($result)): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($book['title']) ?></td>
-                        <td><?= htmlspecialchars($book['author']) ?></td>
-                        <td><?= htmlspecialchars($book['category']) ?></td>
-                        <td>Rp <?= number_format($book['price'], 0, ',', '.') ?></td>
-                        <td><?= $book['stock'] ?></td>
-                        <td>
-                            <?php if (!empty($book['image'])): ?>
-                                <img src="../uploads/<?= htmlspecialchars($book['image']) ?>" alt="<?= htmlspecialchars($book['title']) ?>">
-                            <?php else: ?>
-                                <span class="text-muted">Tidak ada gambar</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <a href="books/edit.php?id=<?= $book['id'] ?>" class="btn btn-sm btn-warning mb-1">Edit</a>
-                            <a href="books/delete.php?id=<?= $book['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin hapus?')">Hapus</a>
-                        </td>
-                    </tr>
-                <?php endwhile ?>
+               <?php $no = 1; while ($book = mysqli_fetch_assoc($result)): ?>
+                <tr>
+                    <td><?= $no++ ?></td>
+                    <td><?= htmlspecialchars($book['title']) ?></td>
+                    <td><?= htmlspecialchars($book['author']) ?></td>
+                    <td><?= htmlspecialchars($book['category']) ?></td>
+                    <td>Rp <?= number_format($book['price'], 0, ',', '.') ?></td>
+                    <td><?= $book['stock'] ?></td>
+                    <td>
+                        <?php if (!empty($book['image'])): ?>
+                            <img src="../uploads/<?= htmlspecialchars($book['image']) ?>" alt="<?= htmlspecialchars($book['title']) ?>">
+                        <?php else: ?>
+                            <span class="text-muted">Tidak ada gambar</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <a href="books/edit.php?id=<?= $book['id'] ?>" class="btn btn-sm btn-warning mb-1">Edit</a>
+                        <a href="books/delete.php?id=<?= $book['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin hapus?')">Hapus</a>
+                    </td>
+                </tr>
+               <?php endwhile; ?>
             </tbody>
         </table>
     </div>
-</div>
+
+   
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

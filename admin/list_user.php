@@ -11,7 +11,7 @@ $query = mysqli_query($conn, "SELECT * FROM users");
     <style>
         table {
             border-collapse: collapse;
-            width: 80%;
+            width: 90%;
             margin: 20px auto;
         }
         th, td {
@@ -21,6 +21,23 @@ $query = mysqli_query($conn, "SELECT * FROM users");
         }
         th {
             background-color: #f4f4f4;
+        }
+        a.btn {
+            padding: 6px 10px;
+            border-radius: 4px;
+            text-decoration: none;
+            color: white;
+            font-size: 14px;
+        }
+        .btn-struk {
+            background-color: #28a745;
+        }
+        .btn-konfirmasi {
+            background-color: #007bff;
+        }
+        .btn-konfirmasi.disabled {
+            background-color: gray;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -46,5 +63,9 @@ $query = mysqli_query($conn, "SELECT * FROM users");
         }
         ?>
     </table>
+
+    <div style="text-align:center; margin-top:20px;">
+        <a href="books.php" class="btn btn-primary" style="background:#333; padding:8px 14px; border-radius:4px; text-decoration:none; color:white;">← Kembali ke Daftar Buku</a>
+    </div>
 </body>
 </html>

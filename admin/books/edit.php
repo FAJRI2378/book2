@@ -12,13 +12,46 @@ if (isset($_POST['submit'])) {
     $stock       = $_POST['stock'];
     $category_id = $_POST['category_id'];
 
-    mysqli_query($conn, "UPDATE books SET title='$title', author='$author', description='$description', price='$price', stock='$stock', category_id='$category_id' WHERE id = $id");
+    // Cek apakah ada file gambar baru
+    if (!empty($_FILES['image']['name'])) {
+        $image_name = time() . '_' . basename($_FILES['image']['name']);
+        $target_path = "../../uploads/" . $image_name;
+
+        // Pindahkan file
+        if (move_uploaded_file($_FILES['image']['tmp_name'], $target_path)) {
+            // Hapus foto lama kalau ada
+            if (!empty($data['image']) && file_exists("../../uploads/" . $data['image'])) {
+                unlink("../../uploads/" . $data['image']);
+            }
+            // Update dengan gambar baru
+            mysqli_query($conn, "UPDATE books SET 
+                title='$title',
+                author='$author',
+                description='$description',
+                price='$price',
+                stock='$stock',
+                category_id='$category_id',
+                image='$image_name'
+                WHERE id = $id");
+        } else {
+            die("Gagal mengunggah gambar.");
+        }
+    } else {
+        // Update tanpa ubah gambar
+        mysqli_query($conn, "UPDATE books SET 
+            title='$title',
+            author='$author',
+            description='$description',
+            price='$price',
+            stock='$stock',
+            category_id='$category_id'
+            WHERE id = $id");
+    }
 
     header("Location: ../books.php");
     exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -48,7 +81,7 @@ if (isset($_POST['submit'])) {
             color: #444;
             font-weight: 500;
         }
-        input[type="text"], input[type="number"], textarea, select {
+        input[type="text"], input[type="number"], textarea, select, input[type="file"] {
             width: 100%;
             padding: 8px 12px;
             margin-bottom: 15px;
@@ -77,12 +110,18 @@ if (isset($_POST['submit'])) {
             text-decoration: none;
             color: #0066cc;
         }
+        .preview-img {
+            display: block;
+            max-width: 150px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="form-container">
         <h2>Edit Buku</h2>
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             <label>Judul</label>
             <input type="text" name="title" value="<?= htmlspecialchars($data['title']) ?>" required>
 
@@ -106,6 +145,12 @@ if (isset($_POST['submit'])) {
                     </option>
                 <?php } ?>
             </select>
+
+            <label>Foto Buku</label>
+            <?php if (!empty($data['image'])): ?>
+                <img src="../../uploads/<?= htmlspecialchars($data['image']) ?>" alt="Foto Buku" class="preview-img">
+            <?php endif; ?>
+            <input type="file" name="image" accept="image/*">
 
             <button type="submit" name="submit">Update</button>
         </form>
