@@ -37,6 +37,11 @@ if ($is_admin) {
 <body>
 <div class="container mt-5">
   <h3>💬 Chat dengan <?= $is_admin ? 'Pengguna' : 'Admin' ?></h3>
+  <a href="../books.php" class="btn btn-primary" 
+   style="background:#007bff; padding:8px 14px; border-radius:4px; text-decoration:none; color:white;">
+   ← Kembali ke Daftar Buku
+</a>
+
   <ul class="list-group">
     <?php while ($u = mysqli_fetch_assoc($users)): ?>
       <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -45,8 +50,6 @@ if ($is_admin) {
       </li>
     <?php endwhile; ?>
   </ul>
-
- <a href="<?= $is_admin ? '../books.php' : '../../index.php' ?>" class="btn btn-secondary mt-3">← Kembali</a>
 
 </div>
 </body>

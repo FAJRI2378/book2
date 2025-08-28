@@ -28,10 +28,13 @@ $result = mysqli_query($conn, "SELECT o.*, b.title
     table { width:100%; border-collapse: collapse; margin-top:20px; }
     th, td { padding:10px; border:1px solid #ddd; text-align:center; }
     th { background:#f8f9fa; }
-    .badge { padding:5px 10px; border-radius:5px; color:white; }
+    .badge { padding:5px 10px; border-radius:5px; color:white; text-transform:capitalize; }
     .pending { background:orange; }
     .confirmed { background:green; }
     .cancelled { background:red; }
+    .dalam_perjalanan { background:blue; }
+    .sampai { background:teal; }
+
     .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; }
     .modal-content { background:white; padding:20px; width:320px; border-radius:8px; text-align:center; }
     .modal-content h3 { margin-bottom:15px; }
@@ -41,27 +44,42 @@ $result = mysqli_query($conn, "SELECT o.*, b.title
 <body>
 
 <h2>📦 Pesanan Saya</h2>
+<a href="index.php" class="btn btn-primary">← Kembali Belanja</a>
 
-<table>
-  <tr>
-    <th>Judul Buku</th>
-    <th>Jumlah</th>
-    <th>Tanggal</th>
-    <th>Metode Pembayaran</th>
-    <th>Status</th>
-    <th>Aksi</th>
-  </tr>
+<!-- Bungkus tabel dalam div scroll -->
+<div class="table-responsive" style="max-height: 400px; overflow-y: auto; margin-top:20px;">
+<table class="table table-bordered table-striped align-middle text-center">
+  <thead class="table-light">
+    <tr>
+      <th>Judul Buku</th>
+      <th>Jumlah</th>
+      <th>Tanggal</th>
+      <th>Metode Pembayaran</th>
+      <th>Status</th>
+      <th>Aksi</th>
+    </tr>
+  </thead>
+  <tbody>
   <?php if (mysqli_num_rows($result) > 0): ?>
-    <?php while($row = mysqli_fetch_assoc($result)): ?>
+    <?php while($row = mysqli_fetch_assoc($result)): 
+        $status_rapi = ucwords(str_replace("_"," ",$row['status']));
+    ?>
       <tr>
         <td><?= htmlspecialchars($row['title']) ?></td>
         <td><?= $row['jumlah'] ?></td>
         <td><?= $row['order_date'] ?></td>
         <td><?= htmlspecialchars($row['payment_method']) ?></td>
-        <td><span class="badge <?= $row['status'] ?>"><?= $row['status'] ?></span></td>
+        <td><span class="badge <?= $row['status'] ?>"><?= $status_rapi ?></span></td>
         <td>
           <button class="btn btn-sm btn-primary"
-                  onclick="cetakStruk('<?= $row['id'] ?>','<?= htmlspecialchars($row['title']) ?>','<?= $row['jumlah'] ?>','<?= $row['order_date'] ?>','<?= $row['status'] ?>','<?= htmlspecialchars($row['payment_method']) ?>')">
+                  onclick="cetakStruk(
+                    '<?= $row['id'] ?>',
+                    '<?= htmlspecialchars($row['title']) ?>',
+                    '<?= $row['jumlah'] ?>',
+                    '<?= $row['order_date'] ?>',
+                    '<?= $status_rapi ?>',
+                    '<?= htmlspecialchars($row['payment_method']) ?>'
+                  )">
             🧾 Struk
           </button>
         </td>
@@ -70,9 +88,10 @@ $result = mysqli_query($conn, "SELECT o.*, b.title
   <?php else: ?>
       <tr><td colspan="6">Belum ada pesanan.</td></tr>
   <?php endif; ?>
+  </tbody>
 </table>
+</div>
 
-<a href="index.php" class="btn btn-secondary mt-3">← Kembali Belanja</a>
 
 <!-- Modal Struk -->
 <div class="modal" id="modalStruk">

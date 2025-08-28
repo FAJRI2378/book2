@@ -15,11 +15,12 @@ if (isset($_POST['update_status'])) {
     exit;
 }
 
-// ambil data orders + user info
+// ambil data orders + user info + stok buku + gambar
 $result = mysqli_query($conn, "
-    SELECT o.*, u.username 
+    SELECT o.*, u.username, b.stock, b.image 
     FROM orders o 
     JOIN users u ON o.user_id = u.id 
+    JOIN books b ON o.book_id = b.id
     ORDER BY o.order_date DESC
 ");
 ?>
@@ -32,13 +33,15 @@ $result = mysqli_query($conn, "
     <style>
         body { font-family: Arial, sans-serif; }
         table { border-collapse: collapse; width: 95%; margin: 20px auto; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; vertical-align: middle; }
         th { background: #f2f2f2; }
         button { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; }
-        .badge { padding: 4px 8px; border-radius: 4px; color: white; }
+        .badge { padding: 4px 8px; border-radius: 4px; color: white; text-transform: capitalize; }
         .pending { background: orange; }
         .confirmed { background: green; }
         .cancelled { background: red; }
+        .dalam_perjalanan { background: blue; }
+        .sampai { background: teal; }
 
         .dropdown { position: relative; display: inline-block; }
         .dropbtn { background: none; border: none; font-size: 18px; cursor: pointer; }
@@ -55,24 +58,40 @@ $result = mysqli_query($conn, "
         .modal-content { background:white; padding:20px; width:300px; border-radius:8px; text-align:center; }
         .modal-content h3 { margin-bottom:15px; }
         .close { float:right; cursor:pointer; font-size:20px; }
+
+        /* gambar buku */
+        .book-img { width:60px; height:auto; border-radius:5px; }
     </style>
 </head>
 <body>
 
 <h2 style="text-align:center;">📦 Kelola Pesanan</h2>
+<a href="books.php" class="back-btn">← Kembali ke Daftar Buku</a>
 
-<table>
-    <tr>
-        <th>No</th>
-        <th>ID Order</th>
-        <th>User</th>
-        <th>Book ID</th>
-        <th>Jumlah</th>
-        <th>Waktu Order</th>
-        <th>Metode Bayar</th>
-        <th>Status</th>
-        <th>Aksi</th>
-    </tr>
+<!-- Search Box -->
+<div style="text-align:center; margin-bottom:15px;">
+    <input type="text" id="searchInput" placeholder="🔍 Cari pesanan..." 
+           style="padding:8px; width:50%; border:1px solid #ccc; border-radius:6px;">
+</div>
+
+<!-- Bungkus tabel dalam div agar bisa slide -->
+<div style="max-height: 400px; overflow-y:auto; margin:0 auto; width:96%;">
+<table id="orderTable">
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>ID Order</th>
+            <th>User</th>
+            <th>Book ID</th>
+            <th>Gambar</th>
+            <th>Jumlah</th>
+            <th>Waktu Order</th>
+            <th>Metode Bayar</th>
+            <th>Status</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
     <?php
      $no = 1;
     while($row = mysqli_fetch_assoc($result)) : ?>
@@ -81,18 +100,28 @@ $result = mysqli_query($conn, "
             <td><?php echo $row['id']; ?></td>
             <td><?php echo htmlspecialchars($row['username']); ?></td>
             <td><?php echo $row['book_id']; ?></td>
+            <td>
+                <?php if (!empty($row['image'])): ?>
+                    <img src="../uploads/<?php echo htmlspecialchars($row['image']); ?>" 
+                         alt="Buku" class="book-img">
+                <?php else: ?>
+                    <span class="text-muted">Tidak ada</span>
+                <?php endif; ?>
+            </td>
             <td><?php echo $row['jumlah']; ?></td>
             <td><?php echo $row['order_date']; ?></td>
             <td><?php echo $row['payment_method']; ?></td>
             <td class="status">
                 <span class="badge <?php echo $row['status']; ?>">
-                    <?php echo $row['status']; ?>
+                    <?php echo ucwords(str_replace("_"," ",$row['status'])); ?>
                 </span>
                 <div class="dropdown">
                     <button class="dropbtn">⋮</button>
                     <div class="dropdown-content">
                         <button onclick="updateStatus(<?php echo $row['id']; ?>, 'pending')">Pending</button>
                         <button onclick="updateStatus(<?php echo $row['id']; ?>, 'confirmed')">Confirmed</button>
+                        <button onclick="updateStatus(<?php echo $row['id']; ?>, 'dalam_perjalanan')">Dalam Perjalanan</button>
+                        <button onclick="updateStatus(<?php echo $row['id']; ?>, 'sampai')">Sampai</button>
                         <button onclick="updateStatus(<?php echo $row['id']; ?>, 'cancelled')">Cancelled</button>
                     </div>
                 </div>
@@ -104,15 +133,21 @@ $result = mysqli_query($conn, "
                     '<?php echo $row['book_id']; ?>',
                     '<?php echo $row['jumlah']; ?>',
                     '<?php echo $row['order_date']; ?>',
-                    '<?php echo $row['status']; ?>',
+                    '<?php echo ucwords(str_replace("_"," ",$row['status'])); ?>',
                     '<?php echo $row['payment_method']; ?>'
                 )">🧾 Struk</button>
+
+                <?php if ($row['status'] === 'sampai'): ?>
+                    <button onclick="hapusOrder(<?php echo $row['id']; ?>)" style="background:red;color:white;">🗑 Hapus</button>
+                <?php elseif ($row['status'] === 'dalam_perjalanan' && $row['stock'] == 0): ?>
+                    <button disabled style="background:gray;color:white;">⏳ Tunggu Barang Sampai</button>
+                <?php endif; ?>
             </td>
         </tr>
     <?php endwhile; ?>
+    </tbody>
 </table>
-
-<a href="books.php" class="back-btn">← Kembali ke Daftar Buku</a>
+</div>
 
 <!-- Modal Struk -->
 <div class="modal" id="modalStruk">
@@ -141,8 +176,8 @@ function updateStatus(id, status) {
         if (data.trim() === "success") {
             let statusCell = document.querySelector(`#row-${id} .status`);
             statusCell.querySelector("span").className = "badge " + status;
-            statusCell.querySelector("span").innerText = status;
-            alert("Status berhasil diubah menjadi " + status);
+            statusCell.querySelector("span").innerText = status.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+            alert("Status berhasil diubah menjadi " + status.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()));
         } else {
             alert("Gagal mengubah status!\n" + data);
         }
@@ -188,6 +223,20 @@ function printStruk(){
     w.document.close();
     w.print();
 }
+
+// Fitur Search di tabel (berdasarkan kolom ID)
+document.getElementById("searchInput").addEventListener("keyup", function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#orderTable tbody tr");
+
+    rows.forEach(row => {
+        let idCell = row.querySelector("td:nth-child(2)"); 
+        if (idCell) {
+            let idText = idCell.innerText.toLowerCase();
+            row.style.display = idText.indexOf(filter) > -1 ? "" : "none";
+        }
+    });
+});
 </script>
 
 </body>

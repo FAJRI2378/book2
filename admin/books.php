@@ -1,14 +1,18 @@
 <?php
 include '../koneksi.php';
 
-$result = mysqli_query($conn, "SELECT books.*, categories.name AS category FROM books JOIN categories ON books.category_id = categories.id");
+$result = mysqli_query($conn, "
+    SELECT books.*, categories.name AS category 
+    FROM books 
+    JOIN categories ON books.category_id = categories.id
+");
 
 if (!$result) {
     die("Query gagal: " . mysqli_error($conn));
 }
 
-// Ambil data About Us
-$aboutRes = mysqli_query($conn, "SELECT value FROM settings WHERE name='about'");
+// Ambil data About Us (teks + gambar)
+$aboutRes = mysqli_query($conn, "SELECT * FROM settings WHERE name='about'");
 $about = mysqli_fetch_assoc($aboutRes);
 ?>
 <!DOCTYPE html>
@@ -18,12 +22,9 @@ $about = mysqli_fetch_assoc($aboutRes);
     <title>Daftar Buku</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .table img {
-            width: 80px;
-            height: auto;
-            object-fit: cover;
-            border-radius: 5px;
-        }
+        .table img { width: 80px; height: auto; object-fit: cover; border-radius: 5px; }
+        .about-section { text-align: center; margin: 30px 0; }
+        .about-section img { max-width: 200px; border-radius: 10px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -31,51 +32,37 @@ $about = mysqli_fetch_assoc($aboutRes);
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
     <a class="navbar-brand" href="#">BookStore</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link active" href="#">Daftar Buku</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="list_user.php">List User</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="../admin/chat/index.php">💬 Chat</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="../admin/order_list.php">Pesanan</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="../kategori/index.php">Kategori</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="edit_about.php">Edit About Us</a>
-        </li>
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <a class="nav-link text-danger" href="../logout.php">🔓 Logout</a>
-          </li>
-        </ul>
+        <li class="nav-item"><a class="nav-link active" href="#">Daftar Buku</a></li>
+        <li class="nav-item"><a class="nav-link" href="list_user.php">List User</a></li>
+        <li class="nav-item"><a class="nav-link" href="../admin/chat/index.php">💬 Chat</a></li>
+        <li class="nav-item"><a class="nav-link" href="../admin/order_list.php">Pesanan</a></li>
+        <li class="nav-item"><a class="nav-link" href="../kategori/index.php">Kategori</a></li>
+        <li class="nav-item"><a class="nav-link" href="edit_about.php">Edit About Us</a></li>
+        <li class="nav-item"><a class="nav-link text-danger" href="../logout.php">🔓 Logout</a></li>
       </ul>
     </div>
   </div>
 </nav>
 
- <!-- ABOUT US -->
-    <div class="card">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">ℹ️ About Us</h5>
-        </div>
-        <div class="card-body">
-            <?= nl2br(htmlspecialchars($about['value'] ?? 'Belum ada informasi About Us.')) ?>
-        </div>
+<!-- ABOUT US -->
+<div class="about-section card shadow-sm">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">ℹ️ About Us</h5>
+    </div>
+    <div class="card-body text-center">
+        <?php if (!empty($about['image'])): ?>
+            <img src="../uploads/<?= htmlspecialchars($about['image']) ?>" alt="About Us">
+        <?php endif; ?>
+        <p class="mt-3"><?= nl2br(htmlspecialchars($about['value'] ?? 'Belum ada informasi About Us.')) ?></p>
     </div>
 </div>
-<!-- ISI HALAMAN -->
+
+<!-- DAFTAR BUKU -->
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>📚 Daftar Buku</h2>
@@ -98,6 +85,17 @@ $about = mysqli_fetch_assoc($aboutRes);
             </thead>
             <tbody>
                <?php $no = 1; while ($book = mysqli_fetch_assoc($result)): ?>
+                <?php
+                  // cek order aktif (selain 'sampai' atau 'cancelled')
+                  $cekOrder = mysqli_query($conn, "
+                      SELECT COUNT(*) AS jml 
+                      FROM orders 
+                      WHERE book_id = '{$book['id']}'
+                        AND status NOT IN ('sampai', 'cancelled')
+                  ");
+                  $cek = mysqli_fetch_assoc($cekOrder);
+                  $adaDalamPerjalanan = $cek['jml'] > 0;
+                ?>
                 <tr>
                     <td><?= $no++ ?></td>
                     <td><?= htmlspecialchars($book['title']) ?></td>
@@ -114,17 +112,19 @@ $about = mysqli_fetch_assoc($aboutRes);
                     </td>
                     <td>
                         <a href="books/edit.php?id=<?= $book['id'] ?>" class="btn btn-sm btn-warning mb-1">Edit</a>
-                        <a href="books/delete.php?id=<?= $book['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin hapus?')">Hapus</a>
+                        <?php if ($adaDalamPerjalanan): ?>
+                            <button class="btn btn-sm btn-secondary" disabled>Hapus (Menunggu)</button>
+                        <?php else: ?>
+                            <a href="books/delete.php?id=<?= $book['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin hapus?')">Hapus</a>
+                        <?php endif; ?>
                     </td>
                 </tr>
                <?php endwhile; ?>
             </tbody>
         </table>
     </div>
+</div>
 
-   
-
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

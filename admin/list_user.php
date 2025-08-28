@@ -43,6 +43,10 @@ $query = mysqli_query($conn, "SELECT * FROM users");
 </head>
 <body>
     <h2 align="center">List User Terdaftar</h2>
+     <a href="books.php" class="btn btn-primary" 
+   style="background:#007bff; padding:8px 14px; border-radius:4px; text-decoration:none; color:white;">
+   ← Kembali ke Daftar Buku
+</a>
     <table>
         <tr>
             <th>No</th>
@@ -64,8 +68,6 @@ $query = mysqli_query($conn, "SELECT * FROM users");
         ?>
     </table>
 
-    <div style="text-align:center; margin-top:20px;">
-        <a href="books.php" class="btn btn-primary" style="background:#333; padding:8px 14px; border-radius:4px; text-decoration:none; color:white;">← Kembali ke Daftar Buku</a>
-    </div>
+   
 </body>
 </html>
