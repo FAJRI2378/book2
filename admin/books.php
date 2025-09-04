@@ -19,19 +19,56 @@ $about = mysqli_fetch_assoc($aboutRes);
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Daftar Buku</title>
+    <title>Admin - BookStore</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .table img { width: 80px; height: auto; object-fit: cover; border-radius: 5px; }
-        .about-section { text-align: center; margin: 30px 0; }
-        .about-section img { max-width: 200px; border-radius: 10px; margin-bottom: 15px; }
+
+        /* --- About Section (sama dengan User) --- */
+        .about {
+          padding: 50px 20px;
+          color: #333;
+          border-radius: 15px;
+          margin: 30px auto;
+          max-width: 1000px;
+        }
+        .about h2 { 
+          font-size: 28px; 
+          margin-bottom: 20px; 
+          font-weight: bold; 
+          text-align:center; 
+        }
+        .about-content {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 30px;
+          flex-wrap: wrap;
+        }
+        .about-content img {
+          max-width: 350px;
+          border-radius: 12px;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+        .about-text {
+          background-color: #000000a7;
+          max-width: 500px;
+          text-align: center;
+          font-size: 16px;
+          line-height: 1.6;
+          padding-bottom: 25px;
+          border-bottom: 2px solid #ccc;
+          color: #ccc;
+          border-radius: 25px;
+          box-shadow: #000000a7 0px 4px 10px;
+        }
     </style>
 </head>
 <body>
 <!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
-    <a class="navbar-brand" href="#">BookStore</a>
+    <a class="navbar-brand" href="#">BookStore Admin</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -42,25 +79,25 @@ $about = mysqli_fetch_assoc($aboutRes);
         <li class="nav-item"><a class="nav-link" href="../admin/chat/index.php">💬 Chat</a></li>
         <li class="nav-item"><a class="nav-link" href="../admin/order_list.php">Pesanan</a></li>
         <li class="nav-item"><a class="nav-link" href="../kategori/index.php">Kategori</a></li>
-        <li class="nav-item"><a class="nav-link" href="edit_about.php">Edit About Us</a></li>
+        <li class="nav-item"><a class="nav-link" href="edit_about.php">✏️ Edit About Us</a></li>
         <li class="nav-item"><a class="nav-link text-danger" href="../logout.php">🔓 Logout</a></li>
       </ul>
     </div>
   </div>
 </nav>
 
-<!-- ABOUT US -->
-<div class="about-section card shadow-sm">
-    <div class="card-header bg-dark text-white">
-        <h5 class="mb-0">ℹ️ About Us</h5>
+<!-- ABOUT US (Sama seperti User) -->
+<section class="about" id="about">
+  <h2>About Us</h2>
+  <div class="about-content">
+    <?php if (!empty($about['image'])): ?>
+      <img src="../uploads/<?= htmlspecialchars($about['image']) ?>" alt="About Us">
+    <?php endif; ?>
+    <div class="about-text">
+      <?= nl2br(htmlspecialchars($about['value'] ?? 'Belum ada informasi About Us.')) ?>
     </div>
-    <div class="card-body text-center">
-        <?php if (!empty($about['image'])): ?>
-            <img src="../uploads/<?= htmlspecialchars($about['image']) ?>" alt="About Us">
-        <?php endif; ?>
-        <p class="mt-3"><?= nl2br(htmlspecialchars($about['value'] ?? 'Belum ada informasi About Us.')) ?></p>
-    </div>
-</div>
+  </div>
+</section>
 
 <!-- DAFTAR BUKU -->
 <div class="container mt-4">

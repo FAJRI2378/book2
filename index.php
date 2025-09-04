@@ -49,10 +49,10 @@ $about = mysqli_fetch_assoc($aboutRes);
       padding: 50px 20px;
       background-color: rgba(255,255,255,0.95);
       color: #333;
-      border-radius: 15px;
       margin: 30px auto;
+      border-radius: 45px;
       max-width: 1000px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      /* box-shadow: 0 4px 12px rgba(0,0,0,0.3); */
     }
     .about h2 { font-size: 28px; margin-bottom: 20px; font-weight: bold; text-align:center; }
     .about-content {
@@ -68,10 +68,17 @@ $about = mysqli_fetch_assoc($aboutRes);
       box-shadow: 0 4px 10px rgba(0,0,0,0.4);
     }
     .about-text {
+      background-color: #000000a7;
       max-width: 500px;
-      text-align: justify;
+      text-align: center;
       font-size: 16px;
       line-height: 1.6;
+      padding-bottom: 25px;
+      border-bottom: 2px solid #ccc;
+      color: #ccc;
+      border-radius: 25px;
+      text-decoration: none;
+      box-shadow: #000000a7 0px 4px 10px;
     }
   </style>
 </head>

@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_query($conn, "UPDATE settings SET value='$about' WHERE name='about'");
     }
 
-    header("Location: edit_about.php?success=1");
+    header("Location: books.php?success=1");
     exit;
 }
 ?>

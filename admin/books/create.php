@@ -12,28 +12,33 @@ if (isset($_POST['submit'])) {
     $stock       = (int)$_POST['stock'];
     $category_id = (int)$_POST['category_id'];
 
-    // Proses Upload Gambar
-    $image_name = '';
-    if (!empty($_FILES['image']['name'])) {
-        $target_dir = "../../uploads/";
-        $image_name = time() . '-' . basename($_FILES["image"]["name"]);
-        $target_file = $target_dir . $image_name;
-
-        if (!move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-            echo "<div class='alert alert-danger'>Gagal upload gambar.</div>";
-            exit;
-        }
-    }
-
-    // Simpan data buku ke database
-    $query = "INSERT INTO books (title, author, description, price, stock, category_id, image)
-              VALUES ('$title', '$author', '$description', $price, $stock, $category_id, '$image_name')";
-
-    if (mysqli_query($conn, $query)) {
-        header("Location: ../books.php");
-        exit;
+    // ✅ Validasi harga minimal Rp5.000
+    if ($price < 5000) {
+        echo "<div class='alert alert-danger text-center'>❌ Harga produk minimal Rp5.000.</div>";
     } else {
-        echo "<div class='alert alert-danger'>Gagal menyimpan data buku: " . mysqli_error($conn) . "</div>";
+        // Proses Upload Gambar
+        $image_name = '';
+        if (!empty($_FILES['image']['name'])) {
+            $target_dir = "../../uploads/";
+            $image_name = time() . '-' . basename($_FILES["image"]["name"]);
+            $target_file = $target_dir . $image_name;
+
+            if (!move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
+                echo "<div class='alert alert-danger'>Gagal upload gambar.</div>";
+                exit;
+            }
+        }
+
+        // Simpan data buku ke database
+        $query = "INSERT INTO books (title, author, description, price, stock, category_id, image)
+                  VALUES ('$title', '$author', '$description', $price, $stock, $category_id, '$image_name')";
+
+        if (mysqli_query($conn, $query)) {
+            header("Location: ../books.php?success=1");
+            exit;
+        } else {
+            echo "<div class='alert alert-danger'>Gagal menyimpan data buku: " . mysqli_error($conn) . "</div>";
+        }
     }
 }
 ?>
@@ -70,12 +75,13 @@ if (isset($_POST['submit'])) {
 
                 <div class="mb-3">
                     <label class="form-label">Harga (Rp)</label>
-                    <input type="number" name="price" class="form-control" required>
+                    <input type="number" name="price" class="form-control" required min="5000">
+                    <small class="text-muted">Harga minimal Rp5.000</small>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Stok</label>
-                    <input type="number" name="stock" class="form-control" required>
+                    <input type="number" name="stock" class="form-control" required min="1">
                 </div>
 
                 <div class="mb-3">
