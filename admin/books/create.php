@@ -1,16 +1,12 @@
 <?php
 include '../../koneksi.php';
 
-// Ambil data kategori dari database
-$categories = mysqli_query($conn, "SELECT * FROM categories");
-
 if (isset($_POST['submit'])) {
     $title       = mysqli_real_escape_string($conn, $_POST['title']);
     $author      = mysqli_real_escape_string($conn, $_POST['author']);
     $description = mysqli_real_escape_string($conn, $_POST['description']);
     $price       = (int)$_POST['price'];
     $stock       = (int)$_POST['stock'];
-    $category_id = (int)$_POST['category_id'];
 
     // ✅ Validasi harga minimal Rp5.000
     if ($price < 5000) {
@@ -30,8 +26,8 @@ if (isset($_POST['submit'])) {
         }
 
         // Simpan data buku ke database
-        $query = "INSERT INTO books (title, author, description, price, stock, category_id, image)
-                  VALUES ('$title', '$author', '$description', $price, $stock, $category_id, '$image_name')";
+        $query = "INSERT INTO books (title, author, description, price, stock, image)
+                  VALUES ('$title', '$author', '$description', $price, $stock, '$image_name')";
 
         if (mysqli_query($conn, $query)) {
             header("Location: ../books.php?success=1");
@@ -42,7 +38,6 @@ if (isset($_POST['submit'])) {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -82,16 +77,6 @@ if (isset($_POST['submit'])) {
                 <div class="mb-3">
                     <label class="form-label">Stok</label>
                     <input type="number" name="stock" class="form-control" required min="1">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Kategori</label>
-                    <select name="category_id" class="form-select" required>
-                        <option value="" disabled selected>-- Pilih Kategori --</option>
-                        <?php while ($cat = mysqli_fetch_assoc($categories)) { ?>
-                            <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
-                        <?php } ?>
-                    </select>
                 </div>
 
                 <div class="mb-3">

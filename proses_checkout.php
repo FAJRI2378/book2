@@ -10,6 +10,8 @@ $user_id = $_SESSION['user_id'];
 $book_id = (int) $_POST['book_id'];
 $jumlah  = (int) $_POST['jumlah'];
 $payment = $_POST['payment_method'];
+$shipping_address = $_POST['shipping_address'] ?? '';
+$shipping_method  = $_POST['shipping_method'] ?? '';
 
 if ($jumlah < 1) {
     die("Jumlah pembelian tidak valid.");
@@ -26,10 +28,12 @@ if (!$book || $book['stock'] < $jumlah) {
     die("Stok tidak mencukupi.");
 }
 
-// simpan ke orders
-$sql = "INSERT INTO orders (user_id, book_id, jumlah, payment_method, order_date) VALUES (?, ?, ?, ?, NOW())";
+// simpan ke orders dengan prepared statement
+$sql = "INSERT INTO orders 
+        (user_id, book_id, jumlah, order_date, payment_method, shipping_address, shipping_method, status) 
+        VALUES (?, ?, ?, NOW(), ?, ?, ?, 'pending')";
 $stmt = mysqli_prepare($conn, $sql);
-mysqli_stmt_bind_param($stmt, "iiis", $user_id, $book_id, $jumlah, $payment);
+mysqli_stmt_bind_param($stmt, "iiisss", $user_id, $book_id, $jumlah, $payment, $shipping_address, $shipping_method);
 mysqli_stmt_execute($stmt);
 
 // kurangi stok

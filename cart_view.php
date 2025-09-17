@@ -34,7 +34,7 @@ if (!empty($cart)) {
             font-family: Arial, sans-serif;
         }
         .content-wrapper {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 40px auto;
             background-color: #fff;
             padding: 30px;
@@ -84,11 +84,13 @@ if (!empty($cart)) {
                                 <input type="hidden" name="book_id" value="<?= $row['id'] ?>">
 
                                 <div class="mb-2">
+                                    <label>Jumlah</label>
                                     <input type="number" name="jumlah" value="1" min="1" max="<?= $row['stock'] ?>" 
                                            class="form-control" style="width: 90px;" required>
                                 </div>
 
                                 <div class="mb-2">
+                                    <label>Metode Pembayaran</label>
                                     <select name="payment_method" class="form-select form-select-sm" required>
                                         <option value="">Pilih Pembayaran</option>
                                         <option value="Transfer Bank">Transfer Bank</option>
@@ -96,6 +98,19 @@ if (!empty($cart)) {
                                         <option value="E-Wallet">E-Wallet (OVO, DANA, GoPay)</option>
                                     </select>
                                 </div>
+
+                               <div class="mb-2">
+                            <input type="text" name="shipping_address" class="form-control" placeholder="Alamat Pengiriman" required>
+                            </div>
+
+                            <div class="mb-2">
+                                <select name="shipping_method" class="form-select" required>
+                                    <option value="">Pilih Metode Pengiriman</option>
+                                    <option value="Kurir">Kurir</option>
+                                    <option value="Ambil di Toko">Ambil di Toko</option>
+                                </select>
+                            </div>
+
 
                                 <button type="submit" class="btn btn-success btn-sm w-100">Checkout</button>
                             </form>

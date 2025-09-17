@@ -55,7 +55,7 @@ $result = mysqli_query($conn, "
 
         /* Modal struk */
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; }
-        .modal-content { background:white; padding:20px; width:300px; border-radius:8px; text-align:center; }
+        .modal-content { background:white; padding:20px; width:350px; border-radius:8px; text-align:center; }
         .modal-content h3 { margin-bottom:15px; }
         .close { float:right; cursor:pointer; font-size:20px; }
 
@@ -74,8 +74,8 @@ $result = mysqli_query($conn, "
            style="padding:8px; width:50%; border:1px solid #ccc; border-radius:6px;">
 </div>
 
-<!-- Bungkus tabel dalam div agar bisa slide -->
-<div style="max-height: 400px; overflow-y:auto; margin:0 auto; width:96%;">
+<!-- Bungkus tabel dalam div agar bisa scroll -->
+<div style="max-height: 500px; overflow-y:auto; margin:0 auto; width:96%;">
 <table id="orderTable">
     <thead>
         <tr>
@@ -87,6 +87,8 @@ $result = mysqli_query($conn, "
             <th>Jumlah</th>
             <th>Waktu Order</th>
             <th>Metode Bayar</th>
+            <th>Alamat Pengiriman</th>
+            <th>Metode Pengiriman</th>
             <th>Status</th>
             <th>Aksi</th>
         </tr>
@@ -111,6 +113,9 @@ $result = mysqli_query($conn, "
             <td><?php echo $row['jumlah']; ?></td>
             <td><?php echo $row['order_date']; ?></td>
             <td><?php echo $row['payment_method']; ?></td>
+            <td><?php echo htmlspecialchars($row['shipping_address'] ?? ''); ?></td>
+<td><?php echo htmlspecialchars($row['shipping_method'] ?? ''); ?></td>
+
             <td class="status">
                 <span class="badge <?php echo $row['status']; ?>">
                     <?php echo ucwords(str_replace("_"," ",$row['status'])); ?>
@@ -134,14 +139,10 @@ $result = mysqli_query($conn, "
                     '<?php echo $row['jumlah']; ?>',
                     '<?php echo $row['order_date']; ?>',
                     '<?php echo ucwords(str_replace("_"," ",$row['status'])); ?>',
-                    '<?php echo $row['payment_method']; ?>'
+                    '<?php echo $row['payment_method']; ?>',
+                    '<?php echo htmlspecialchars($row['shipping_address']); ?>',
+                    '<?php echo htmlspecialchars($row['shipping_method']); ?>'
                 )">🧾 Struk</button>
-
-                <?php if ($row['status'] === 'sampai'): ?>
-                    <button onclick="hapusOrder(<?php echo $row['id']; ?>)" style="background:red;color:white;">🗑 Hapus</button>
-                <?php elseif ($row['status'] === 'dalam_perjalanan' && $row['stock'] == 0): ?>
-                    <button disabled style="background:gray;color:white;">⏳ Tunggu Barang Sampai</button>
-                <?php endif; ?>
             </td>
         </tr>
     <?php endwhile; ?>
@@ -185,7 +186,7 @@ function updateStatus(id, status) {
     .catch(err => alert("Error: " + err));
 }
 
-function cetakStruk(id,user,book,jumlah,date,status,payment){
+function cetakStruk(id,user,book,jumlah,date,status,payment,address,shipping){
     let detail = `
         <p><b>ID Order:</b> ${id}</p>
         <p><b>User:</b> ${user}</p>
@@ -193,6 +194,8 @@ function cetakStruk(id,user,book,jumlah,date,status,payment){
         <p><b>Jumlah:</b> ${jumlah}</p>
         <p><b>Tanggal:</b> ${date}</p>
         <p><b>Metode Bayar:</b> ${payment}</p>
+        <p><b>Alamat Pengiriman:</b> ${address}</p>
+        <p><b>Metode Pengiriman:</b> ${shipping}</p>
         <p><b>Status:</b> ${status}</p>
     `;
     document.getElementById("strukDetail").innerHTML = detail;

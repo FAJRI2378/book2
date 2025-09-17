@@ -47,7 +47,7 @@ $result = mysqli_query($conn, "SELECT o.*, b.title
 <a href="index.php" class="btn btn-primary">← Kembali Belanja</a>
 
 <!-- Bungkus tabel dalam div scroll -->
-<div class="table-responsive" style="max-height: 400px; overflow-y: auto; margin-top:20px;">
+<div class="table-responsive" style="max-height: 450px; overflow-y: auto; margin-top:20px;">
 <table class="table table-bordered table-striped align-middle text-center">
   <thead class="table-light">
     <tr>
@@ -55,6 +55,8 @@ $result = mysqli_query($conn, "SELECT o.*, b.title
       <th>Jumlah</th>
       <th>Tanggal</th>
       <th>Metode Pembayaran</th>
+      <th>Alamat Pengiriman</th>
+      <th>Metode Pengiriman</th>
       <th>Status</th>
       <th>Aksi</th>
     </tr>
@@ -69,6 +71,8 @@ $result = mysqli_query($conn, "SELECT o.*, b.title
         <td><?= $row['jumlah'] ?></td>
         <td><?= $row['order_date'] ?></td>
         <td><?= htmlspecialchars($row['payment_method']) ?></td>
+        <td><?= htmlspecialchars($row['shipping_address']) ?></td>
+        <td><?= htmlspecialchars($row['shipping_method']) ?></td>
         <td><span class="badge <?= $row['status'] ?>"><?= $status_rapi ?></span></td>
         <td>
           <button class="btn btn-sm btn-primary"
@@ -78,7 +82,9 @@ $result = mysqli_query($conn, "SELECT o.*, b.title
                     '<?= $row['jumlah'] ?>',
                     '<?= $row['order_date'] ?>',
                     '<?= $status_rapi ?>',
-                    '<?= htmlspecialchars($row['payment_method']) ?>'
+                    '<?= htmlspecialchars($row['payment_method']) ?>',
+                    '<?= htmlspecialchars($row['shipping_address']) ?>',
+                    '<?= htmlspecialchars($row['shipping_method']) ?>'
                   )">
             🧾 Struk
           </button>
@@ -86,7 +92,7 @@ $result = mysqli_query($conn, "SELECT o.*, b.title
       </tr>
     <?php endwhile; ?>
   <?php else: ?>
-      <tr><td colspan="6">Belum ada pesanan.</td></tr>
+      <tr><td colspan="8">Belum ada pesanan.</td></tr>
   <?php endif; ?>
   </tbody>
 </table>
@@ -105,13 +111,15 @@ $result = mysqli_query($conn, "SELECT o.*, b.title
 </div>
 
 <script>
-function cetakStruk(id,title,jumlah,date,status,payment_method){
+function cetakStruk(id,title,jumlah,date,status,payment_method,shipping_address,shipping_method){
     let detail = `
         <p><b>ID Order:</b> ${id}</p>
         <p><b>Judul Buku:</b> ${title}</p>
         <p><b>Jumlah:</b> ${jumlah}</p>
         <p><b>Tanggal:</b> ${date}</p>
         <p><b>Metode Pembayaran:</b> ${payment_method}</p>
+        <p><b>Alamat Pengiriman:</b> ${shipping_address}</p>
+        <p><b>Metode Pengiriman:</b> ${shipping_method}</p>
         <p><b>Status:</b> ${status}</p>
     `;
     document.getElementById("strukDetail").innerHTML = detail;
