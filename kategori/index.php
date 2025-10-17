@@ -70,7 +70,6 @@ $categories = mysqli_query($conn, "SELECT * FROM categories");
 
     <h2>📚 Data Kategori Buku</h2>
     <div class="top-links">
-        <a href="../admin/books.php">🔍 Lihat Semua Buku</a>
         <a href="tambah.php">➕ Tambah Kategori</a>
     </div>
 

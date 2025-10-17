@@ -1,39 +1,43 @@
 <?php
+session_start();
 include '../../koneksi.php';
 
+// 🚫 Cegah user non-admin mengakses halaman ini
+if (empty($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    echo "<script>alert('❌ Anda tidak memiliki akses ke halaman ini!'); window.location='../../index.php';</script>";
+    exit;
+}
+
+// Ambil kategori dari tabel categories
+$kategori = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
+
+$error = '';
 if (isset($_POST['submit'])) {
     $title       = mysqli_real_escape_string($conn, $_POST['title']);
     $author      = mysqli_real_escape_string($conn, $_POST['author']);
+    $category    = (int) $_POST['category']; 
     $description = mysqli_real_escape_string($conn, $_POST['description']);
-    $price       = (int)$_POST['price'];
-    $stock       = (int)$_POST['stock'];
+    $price       = (int) $_POST['price'];
+    $stock       = (int) $_POST['stock'];
 
-    // ✅ Validasi harga minimal Rp5.000
     if ($price < 5000) {
-        echo "<div class='alert alert-danger text-center'>❌ Harga produk minimal Rp5.000.</div>";
+        $error = "❌ Harga minimal Rp5.000.";
     } else {
-        // Proses Upload Gambar
         $image_name = '';
         if (!empty($_FILES['image']['name'])) {
             $target_dir = "../../uploads/";
             $image_name = time() . '-' . basename($_FILES["image"]["name"]);
             $target_file = $target_dir . $image_name;
-
-            if (!move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-                echo "<div class='alert alert-danger'>Gagal upload gambar.</div>";
-                exit;
-            }
+            move_uploaded_file($_FILES["image"]["tmp_name"], $target_file);
         }
 
-        // Simpan data buku ke database
-        $query = "INSERT INTO books (title, author, description, price, stock, image)
-                  VALUES ('$title', '$author', '$description', $price, $stock, '$image_name')";
-
+        $query = "INSERT INTO books (title, author, category_id, description, price, stock, image)
+                  VALUES ('$title', '$author', $category, '$description', $price, $stock, '$image_name')";
         if (mysqli_query($conn, $query)) {
             header("Location: ../books.php?success=1");
             exit;
         } else {
-            echo "<div class='alert alert-danger'>Gagal menyimpan data buku: " . mysqli_error($conn) . "</div>";
+            $error = "❌ Gagal menyimpan data: " . mysqli_error($conn);
         }
     }
 }
@@ -48,46 +52,57 @@ if (isset($_POST['submit'])) {
 <body class="bg-light">
 <div class="container mt-5">
     <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">📚 Tambah Buku Baru</h4>
-        </div>
+        <div class="card-header bg-primary text-white"><h4>📚 Tambah Buku Baru</h4></div>
         <div class="card-body">
+
+            <?php if ($error): ?>
+                <div class="alert alert-danger text-center"><?= $error ?></div>
+            <?php endif; ?>
+
             <form method="post" enctype="multipart/form-data">
                 <div class="mb-3">
-                    <label class="form-label">Judul Buku</label>
+                    <label>Judul Buku</label>
                     <input type="text" name="title" class="form-control" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Penulis</label>
+                    <label>Penulis</label>
                     <input type="text" name="author" class="form-control">
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Deskripsi</label>
-                    <textarea name="description" class="form-control" rows="4"></textarea>
+                    <label>Kategori</label>
+                    <select name="category" class="form-select" required>
+                        <option value="">-- Pilih Kategori --</option>
+                        <?php while ($row = mysqli_fetch_assoc($kategori)): ?>
+                            <option value="<?= $row['id'] ?>"><?= htmlspecialchars($row['name']) ?></option>
+                        <?php endwhile; ?>
+                    </select>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Harga (Rp)</label>
-                    <input type="number" name="price" class="form-control" required min="5000">
+                    <label>Deskripsi</label>
+                    <textarea name="description" class="form-control"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label>Harga</label>
+                    <input type="number" name="price" min="5000" class="form-control" required>
                     <small class="text-muted">Harga minimal Rp5.000</small>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Stok</label>
-                    <input type="number" name="stock" class="form-control" required min="1">
+                    <label>Stok</label>
+                    <input type="number" name="stock" min="1" class="form-control" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Upload Gambar</label>
-                    <input type="file" name="image" accept="image/*" class="form-control">
+                    <label>Upload Gambar</label>
+                    <input type="file" name="image" class="form-control">
                 </div>
 
-                <div class="text-end">
-                    <button type="submit" name="submit" class="btn btn-success">💾 Simpan</button>
-                    <a href="../books.php" class="btn btn-secondary">🔙 Kembali</a>
-                </div>
+                <button type="submit" name="submit" class="btn btn-success">💾 Simpan</button>
+                <a href="../books.php" class="btn btn-secondary">🔙 Kembali</a>
             </form>
         </div>
     </div>

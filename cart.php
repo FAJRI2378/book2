@@ -5,15 +5,19 @@ include 'koneksi.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_id'])) {
     $bookId = (int)$_POST['book_id'];
 
-    // Inisialisasi session cart jika belum ada
+    // Inisialisasi cart kalau belum ada
     if (!isset($_SESSION['cart'])) {
         $_SESSION['cart'] = [];
     }
 
-    // Tambah buku ke keranjang
-    $_SESSION['cart'][] = $bookId;
+    // Jika buku sudah ada, tambahkan qty, kalau belum set qty=1
+    if (isset($_SESSION['cart'][$bookId])) {
+        $_SESSION['cart'][$bookId]++;
+    } else {
+        $_SESSION['cart'][$bookId] = 1;
+    }
 
-    header("Location: cart_view.php"); // tampilkan keranjang setelah ditambah
+    header("Location: cart_view.php");
     exit;
 }
 ?>

@@ -1,43 +1,36 @@
 <?php
 include '../../koneksi.php';
-$id = $_GET['id'];
+
+$id = (int) $_GET['id'];
 $data = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM books WHERE id = $id"));
+
+// Ambil kategori dari DB
+$kategori = mysqli_query($conn, "SELECT * FROM categories ORDER BY name ASC");
 
 if (isset($_POST['submit'])) {
     $title       = $_POST['title'];
     $author      = $_POST['author'];
+    $category    = (int) $_POST['category'];
     $description = $_POST['description'];
     $price       = $_POST['price'];
     $stock       = $_POST['stock'];
 
-    // Cek apakah ada file gambar baru
     if (!empty($_FILES['image']['name'])) {
         $image_name = time() . '_' . basename($_FILES['image']['name']);
         $target_path = "../../uploads/" . $image_name;
+        move_uploaded_file($_FILES['image']['tmp_name'], $target_path);
 
-        if (move_uploaded_file($_FILES['image']['tmp_name'], $target_path)) {
-            if (!empty($data['image']) && file_exists("../../uploads/" . $data['image'])) {
-                unlink("../../uploads/" . $data['image']);
-            }
-            mysqli_query($conn, "UPDATE books SET 
-                title='$title',
-                author='$author',
-                description='$description',
-                price='$price',
-                stock='$stock',
-                image='$image_name'
-                WHERE id = $id");
-        } else {
-            die("Gagal mengunggah gambar.");
+        if (!empty($data['image']) && file_exists("../../uploads/" . $data['image'])) {
+            unlink("../../uploads/" . $data['image']);
         }
+
+        mysqli_query($conn, "UPDATE books SET 
+            title='$title', author='$author', category_id=$category, description='$description',
+            price=$price, stock=$stock, image='$image_name' WHERE id=$id");
     } else {
         mysqli_query($conn, "UPDATE books SET 
-            title='$title',
-            author='$author',
-            description='$description',
-            price='$price',
-            stock='$stock'
-            WHERE id = $id");
+            title='$title', author='$author', category_id=$category, description='$description',
+            price=$price, stock=$stock WHERE id=$id");
     }
 
     header("Location: ../books.php");
@@ -48,63 +41,64 @@ if (isset($_POST['submit'])) {
 <html>
 <head>
     <title>Edit Buku</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f5f7fa;
-            padding: 40px;
-        }
-        .form-container {
-            max-width: 500px;
-            background: white;
-            padding: 25px 30px;
-            border-radius: 8px;
-            margin: auto;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .form-container h2 {
-            margin-bottom: 25px;
-            text-align: center;
-            color: #333;
-        }
-        label { display: block; margin-bottom: 5px; font-weight: 500; }
-        input, textarea { width: 100%; padding: 8px 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; }
-        button {
-            width: 100%; padding: 10px; background-color: #0066cc; border: none; color: white;
-            font-size: 16px; border-radius: 5px; cursor: pointer;
-        }
-        button:hover { background-color: #004da0; }
-        .preview-img { display: block; max-width: 150px; margin-bottom: 10px; border-radius: 5px; }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <div class="form-container">
-        <h2>Edit Buku</h2>
-        <form method="post" enctype="multipart/form-data">
-            <label>Judul</label>
-            <input type="text" name="title" value="<?= htmlspecialchars($data['title']) ?>" required>
+<body class="bg-light">
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-warning"><h4>✏️ Edit Buku</h4></div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label>Judul</label>
+                    <input type="text" name="title" value="<?= htmlspecialchars($data['title']) ?>" class="form-control" required>
+                </div>
 
-            <label>Penulis</label>
-            <input type="text" name="author" value="<?= htmlspecialchars($data['author']) ?>">
+                <div class="mb-3">
+                    <label>Penulis</label>
+                    <input type="text" name="author" value="<?= htmlspecialchars($data['author']) ?>" class="form-control">
+                </div>
 
-            <label>Deskripsi</label>
-            <textarea name="description"><?= htmlspecialchars($data['description']) ?></textarea>
+                <div class="mb-3">
+                    <label>Kategori</label>
+                    <select name="category" class="form-select" required>
+                        <option value="">-- Pilih Kategori --</option>
+                        <?php while ($row = mysqli_fetch_assoc($kategori)): ?>
+                            <option value="<?= $row['id'] ?>" <?= $data['category_id'] == $row['id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($row['name']) ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
 
-            <label>Harga</label>
-            <input type="number" name="price" value="<?= $data['price'] ?>">
+                <div class="mb-3">
+                    <label>Deskripsi</label>
+                    <textarea name="description" class="form-control"><?= htmlspecialchars($data['description']) ?></textarea>
+                </div>
 
-            <label>Stok</label>
-            <input type="number" name="stock" value="<?= $data['stock'] ?>" required>
+                <div class="mb-3">
+                    <label>Harga</label>
+                    <input type="number" name="price" value="<?= $data['price'] ?>" class="form-control">
+                </div>
 
-            <label>Foto Buku</label>
-            <?php if (!empty($data['image'])): ?>
-                <img src="../../uploads/<?= htmlspecialchars($data['image']) ?>" class="preview-img">
-            <?php endif; ?>
-            <input type="file" name="image" accept="image/*">
+                <div class="mb-3">
+                    <label>Stok</label>
+                    <input type="number" name="stock" value="<?= $data['stock'] ?>" class="form-control">
+                </div>
 
-            <button type="submit" name="submit">Update</button>
-        </form>
-        <div class="back-link"><a href="../books.php">← Kembali ke Daftar Buku</a></div>
+                <div class="mb-3">
+                    <label>Foto Buku</label><br>
+                    <?php if (!empty($data['image'])): ?>
+                        <img src="../../uploads/<?= htmlspecialchars($data['image']) ?>" width="120" class="mb-2">
+                    <?php endif; ?>
+                    <input type="file" name="image" class="form-control">
+                </div>
+
+                <button type="submit" name="submit" class="btn btn-success">💾 Update</button>
+                <a href="../books.php" class="btn btn-secondary">🔙 Kembali</a>
+            </form>
+        </div>
     </div>
+</div>
 </body>
 </html>
