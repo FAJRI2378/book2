@@ -11,7 +11,6 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['role']) || $_SESSION['role']
 }
 
 $user_id = $_SESSION['user_id'];
-$username = '';
 
 // ==============================
 // 👤 AMBIL USERNAME
@@ -45,7 +44,7 @@ $result = $conn->query("SELECT id, name FROM categories ORDER BY name ASC");
 while ($row = $result->fetch_assoc()) $categories[] = $row;
 
 // ==============================
-// 📚 AJAX SEARCH + FILTER
+// 🔍 AJAX FILTER & SEARCH
 // ==============================
 if (isset($_GET['ajax_filter'])) {
     $search = trim($_GET['search'] ?? '');
@@ -53,17 +52,21 @@ if (isset($_GET['ajax_filter'])) {
     $sort = $_GET['sort'] ?? '';
     $min_price = $_GET['min_price'] ?? '';
     $max_price = $_GET['max_price'] ?? '';
+    $rating = isset($_GET['rating']) ? (int)$_GET['rating'] : 0; // ⭐ TAMBAHAN RATING FILTER
 
     $query = "
-        SELECT books.*, categories.name AS category
+        SELECT books.*, categories.name AS category,
+               IFNULL(AVG(rv.rating), 0) AS avg_rating,
+               COUNT(rv.id) AS total_review
         FROM books
         JOIN categories ON books.category_id = categories.id
+        LEFT JOIN reviews rv ON books.id = rv.book_id
         WHERE 1=1
     ";
 
     if ($search) {
-        $searchEsc = "%$search%";
-        $query .= " AND (books.title LIKE '$searchEsc' OR books.author LIKE '$searchEsc')";
+        $searchEsc = $conn->real_escape_string($search);
+        $query .= " AND (books.title LIKE '%$searchEsc%' OR books.author LIKE '%$searchEsc%')";
     }
 
     if ($category !== '') {
@@ -74,18 +77,37 @@ if (isset($_GET['ajax_filter'])) {
         $query .= " AND books.price BETWEEN " . intval($min_price) . " AND " . intval($max_price);
     }
 
-    if ($sort === 'low_high') {
-        $query .= " ORDER BY books.price ASC";
-    } elseif ($sort === 'high_low') {
-        $query .= " ORDER BY books.price DESC";
-    } else {
-        $query .= " ORDER BY books.title ASC";
+    $query .= " GROUP BY books.id ";
+
+    // ⭐ TAMBAHAN FILTER RATING
+    if ($rating > 0) {
+        $query .= " HAVING avg_rating >= $rating ";
     }
+
+    // Urutkan
+switch ($sort) {
+    case 'low_high':
+        $query .= " ORDER BY books.price ASC";
+        break;
+    case 'high_low':
+        $query .= " ORDER BY books.price DESC";
+        break;
+    case 'newest':
+        $query .= " ORDER BY books.id DESC"; // ID terbaru
+        break;
+    case 'bestseller':
+        // Misal ada kolom 'sold_count' di tabel books
+        $query .= " ORDER BY books.sold_count DESC";
+        break;
+    default:
+        $query .= " ORDER BY books.title ASC";
+}
+
 
     $result = $conn->query($query);
 
     if ($result->num_rows == 0) {
-        echo '<div class="no-books">
+        echo '<div class="no-books" data-aos="fade-up">
                 <i class="fas fa-search fa-shake"></i>
                 <h4>Tidak ada buku yang ditemukan</h4>
                 <p>Coba ubah filter atau kata kunci pencarian.</p>
@@ -93,15 +115,30 @@ if (isset($_GET['ajax_filter'])) {
     } else {
         echo '<div class="row g-4">';
         while ($row = $result->fetch_assoc()) {
-            echo '<div class="col-sm-6 col-md-4 col-lg-3">
+            $rating = round($row['avg_rating'], 1);
+            $stars = str_repeat('⭐', floor($rating));
+            if ($rating > floor($rating)) $stars .= '✩';
+
+            echo '<div class="col-sm-6 col-md-4 col-lg-3" data-aos="zoom-in" data-aos-duration="800">
                     <div class="card book-card h-100">
                       <img src="'.(!empty($row['image'])?'uploads/'.htmlspecialchars($row['image']):'assets/no-image.png').'" class="card-img-top" alt="'.htmlspecialchars($row['title']).'">
                       <div class="card-body d-flex flex-column">
                         <h5 class="card-title">'.htmlspecialchars($row['title']).'</h5>
                         <p class="card-text"><i class="fas fa-user me-1"></i>'.htmlspecialchars($row['author']).'</p>
                         <p class="card-text"><i class="fas fa-tag me-1"></i>'.htmlspecialchars($row['category']).'</p>
-                        <p class="card-text"><strong class="price-tag">Rp '.number_format($row['price'],0,',','.').'</strong></p>
-                        <div class="mt-auto">';
+                        <p class="card-text mb-1"><strong class="price-tag">Rp '.number_format($row['price'],0,',','.').'</strong></p>
+                        <p class="text-warning mb-2">'.$stars.' 
+                            <small class="text-muted">('.number_format($rating,1).'/5 dari '.$row['total_review'].' ulasan)</small>
+                        </p>
+
+                        <div class="mt-auto">
+                          <form method="POST" action="wishlist_action.php" class="mt-1">
+                              <input type="hidden" name="book_id" value="'.$row['id'].'">
+                              <button type="submit" class="btn btn-outline-warning w-100 mb-2">
+                                <i class="fas fa-heart"></i> Tambah ke Wishlist
+                              </button>
+                          </form>';
+
             if ($row['stock'] > 0) {
                 echo '<form method="POST" action="cart.php">
                         <input type="hidden" name="book_id" value="'.$row['id'].'">
@@ -110,6 +147,7 @@ if (isset($_GET['ajax_filter'])) {
             } else {
                 echo '<button disabled class="btn btn-secondary w-100"><i class="fas fa-ban me-1"></i>Stok Habis</button>';
             }
+
             echo '</div></div></div></div>';
         }
         echo '</div>';
@@ -125,23 +163,47 @@ if (isset($_GET['ajax_filter'])) {
 <title>BookStore - Dashboard User</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
-body { font-family:'Segoe UI', sans-serif; background:#f4f6f8; padding-top:80px; }
-.navbar { background-color:#0d6efd !important; }
-.book-card { border:none; border-radius:15px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.1); transition:0.3s; background:white; }
+:root {
+  --bg-color: #f4f6f8;
+  --text-color: #212529;
+  --card-bg: #fff;
+  --navbar-bg: #0d6efd;
+}
+
+body.dark-mode {
+  --bg-color: #121212;
+  --text-color: #f1f1f1;
+  --card-bg: #1e1e1e;
+  --navbar-bg: #1f1f1f;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg-color);
+  color: var(--text-color);
+  padding-top: 80px;
+  transition: 0.4s background, 0.4s color;
+}
+
+.navbar { background-color: var(--navbar-bg) !important; transition: 0.3s; }
+.book-card { border:none; border-radius:15px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.1); transition:0.3s; background: var(--card-bg); }
 .book-card:hover { transform:translateY(-5px); box-shadow:0 8px 25px rgba(0,0,0,0.15); }
-.book-card img { height:260px; object-fit:cover; }
+.book-card img { height:260px; object-fit:cover; transition:0.3s; }
+.book-card:hover img { transform: scale(1.05); }
 .price-tag { color:#28a745; font-weight:bold; }
-.filter-box { background:white; border-radius:12px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05); margin-bottom:30px; }
+.filter-box { background: var(--card-bg); border-radius:12px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05); margin-bottom:30px; transition: 0.3s; }
 .no-books { text-align:center; padding:50px; color:#666; }
 .chat-badge { background:red; color:white; font-size:12px; border-radius:50%; padding:2px 6px; margin-left:4px; }
+.dark-mode .no-books { color:#bbb; }
 @media (max-width:768px){ .book-card img{height:220px;} }
 </style>
 </head>
 <body>
 
-<!-- Navbar -->
+<!-- 🔵 Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow">
   <div class="container">
     <a class="navbar-brand fw-bold" href="#"><i class="fas fa-book-open me-2"></i>BookStore</a>
@@ -152,10 +214,21 @@ body { font-family:'Segoe UI', sans-serif; background:#f4f6f8; padding-top:80px;
       <ul class="navbar-nav align-items-center">
         <li class="nav-item me-2"><a class="nav-link" href="cart_view.php"><i class="fas fa-shopping-cart me-1"></i>Keranjang</a></li>
         <li class="nav-item me-2"><a class="nav-link" href="orderan_saya.php"><i class="fas fa-box me-1"></i>Pesanan</a></li>
+        <li class="nav-item me-2"><a class="nav-link" href="about.php"><i class="fas fa-circle-info me-1"></i>About</a></li>
+        <li class="nav-item me-2"><a class="nav-link" href="wishlist.php"><i class="fas fa-heart me-1"></i>Wishlist</a></li>
         <li class="nav-item me-2 position-relative">
           <a id="chatDropdown" class="nav-link position-relative" href="chat.php?admin_id=2">
             <i class="fas fa-comments me-1"></i>Chat
           </a>
+        </li>
+        <li class="nav-item me-3">
+        <select id="languageSelect" class="form-select form-select-sm">
+          <option value="id">🇮🇩 Indonesia</option>
+          <option value="en">🇬🇧 English</option>
+        </select>
+      </li>
+        <li class="nav-item me-3">
+          <button id="toggleTheme" class="btn btn-outline-light btn-sm"><i class="fas fa-moon"></i></button>
         </li>
         <li class="nav-item"><button id="btn-logout" class="btn btn-sm btn-danger">Logout</button></li>
       </ul>
@@ -163,9 +236,9 @@ body { font-family:'Segoe UI', sans-serif; background:#f4f6f8; padding-top:80px;
   </div>
 </nav>
 
-<!-- Filter Section -->
+<!-- 🧮 Filter Section -->
 <section class="container">
-  <div class="filter-box">
+  <div class="filter-box" data-aos="fade-down">
     <div class="row g-3">
       <div class="col-md-3">
         <input type="text" id="searchInput" class="form-control" placeholder="Cari buku...">
@@ -179,16 +252,29 @@ body { font-family:'Segoe UI', sans-serif; background:#f4f6f8; padding-top:80px;
         </select>
       </div>
       <div class="col-md-2">
-        <select id="sortFilter" class="form-select">
-          <option value="">Urutkan</option>
-          <option value="low_high">Harga: Murah → Mahal</option>
-          <option value="high_low">Harga: Mahal → Murah</option>
-        </select>
+       <select id="sortFilter" class="form-select">
+      <option value="">Urutkan</option>
+      <option value="newest">Terbaru</option>
+      <option value="bestseller">Terlaris</option>
+      <option value="low_high">Termurah</option>
+      <option value="high_low">Termahal</option>
+    </select>
       </div>
       <div class="col-md-2 d-flex">
         <input type="number" id="minPrice" class="form-control me-2" placeholder="Min">
         <input type="number" id="maxPrice" class="form-control" placeholder="Max">
       </div>
+      <div class="col-md-2">
+      <select id="ratingFilter" class="form-select">
+        <option value="">Semua Rating</option>
+        <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+        <option value="4">⭐⭐⭐⭐ ke atas</option>
+        <option value="3">⭐⭐⭐ ke atas</option>
+        <option value="2">⭐⭐ ke atas</option>
+        <option value="1">⭐ ke atas</option>
+      </select>
+    </div>
+
       <div class="col-md-2 d-grid">
         <button id="applyFilter" class="btn btn-primary"><i class="fas fa-filter me-1"></i>Terapkan</button>
       </div>
@@ -198,12 +284,14 @@ body { font-family:'Segoe UI', sans-serif; background:#f4f6f8; padding-top:80px;
   <div id="bookResults"></div>
 </section>
 
-<!-- 🔔 Sound file (opsional) -->
 <audio id="notifSound" src="assets/notify.mp3" preload="auto"></audio>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
 <script>
+AOS.init({ duration: 800, once: true });
+
 function loadBooks(){
   const params = {
     ajax_filter: 1,
@@ -211,14 +299,16 @@ function loadBooks(){
     category: $('#categoryFilter').val(),
     sort: $('#sortFilter').val(),
     min_price: $('#minPrice').val(),
-    max_price: $('#maxPrice').val()
+    max_price: $('#maxPrice').val(),
+    rating: $('#ratingFilter').val() // ⭐ TAMBAHAN
   };
   $.get('', params, function(data){
     $('#bookResults').html(data);
+    AOS.refresh();
   });
 }
 
-// 🔔 CEK PESAN BARU DARI ADMIN SETIAP 5 DETIK
+// 🔔 Cek pesan baru dari admin tiap 5 detik
 setInterval(function(){
   $.get('', {check_new_chat: true}, function(data){
     let unread = parseInt(data);
@@ -229,8 +319,6 @@ setInterval(function(){
       } else {
         badge.text(unread);
       }
-
-      // 🔔 Jika ada pesan baru
       if (!window.lastUnread || unread > window.lastUnread) {
         Swal.fire({
           title: 'Pesan Baru!',
@@ -242,7 +330,6 @@ setInterval(function(){
           timer: 4000,
           timerProgressBar: true
         });
-        // 🔊 Putar suara notifikasi
         document.getElementById('notifSound').play().catch(()=>{});
       }
     } else {
@@ -256,8 +343,82 @@ $(document).ready(function(){
   loadBooks();
   $('#applyFilter').on('click', loadBooks);
   $('#searchInput').on('input', () => setTimeout(loadBooks, 300));
+
+  // 🌙 DARK MODE
+  const themeBtn = $('#toggleTheme');
+  const currentTheme = localStorage.getItem('theme');
+  if (currentTheme === 'dark') {
+    $('body').addClass('dark-mode');
+    themeBtn.html('<i class="fas fa-sun"></i>');
+  }
+
+  themeBtn.on('click', function(){
+    $('body').toggleClass('dark-mode');
+    const isDark = $('body').hasClass('dark-mode');
+    themeBtn.html(isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  });
 });
 
+// 🌍 Translator Otomatis (Indo ↔ English)
+const translations = {
+  id: {
+    "Cari buku...": "Cari buku...",
+    "Semua Kategori": "Semua Kategori",
+    "Urutkan": "Urutkan",
+    "Harga: Murah → Mahal": "Harga: Murah → Mahal",
+    "Harga: Mahal → Murah": "Harga: Mahal → Murah",
+    "Terapkan": "Terapkan",
+    "Keranjang": "Keranjang",
+    "Pesanan": "Pesanan",
+    "Tentang": "Tentang",
+    "Wishlist": "Wishlist",
+    "Chat": "Chat",
+    "Logout": "Logout",
+    "Semua Rating": "Semua Rating"
+  },
+  en: {
+    "Cari buku...": "Search books...",
+    "Semua Kategori": "All Categories",
+    "Urutkan": "Sort",
+    "Harga: Murah → Mahal": "Price: Low → High",
+    "Harga: Mahal → Murah": "Price: High → Low",
+    "Terapkan": "Apply",
+    "Keranjang": "Cart",
+    "Pesanan": "Orders",
+    "Tentang": "About",
+    "Wishlist": "Wishlist",
+    "Chat": "Chat",
+    "Logout": "Logout",
+    "Semua Rating": "All Ratings"
+  }
+};
+
+$('#languageSelect').on('change', function() {
+  const lang = $(this).val();
+  localStorage.setItem('language', lang);
+  translatePage(lang);
+});
+
+function translatePage(lang) {
+  $('[placeholder], option, button, a, h4, h5, p, span').each(function() {
+    let text = $(this).text().trim();
+    let placeholder = $(this).attr('placeholder');
+    if (translations[lang][text]) $(this).text(translations[lang][text]);
+    if (placeholder && translations[lang][placeholder]) {
+      $(this).attr('placeholder', translations[lang][placeholder]);
+    }
+  });
+}
+
+$(document).ready(function() {
+  const savedLang = localStorage.getItem('language') || 'id';
+  $('#languageSelect').val(savedLang);
+  translatePage(savedLang);
+});
+
+
+// 🚪 Logout
 $('#btn-logout').click(() => {
   Swal.fire({
     title: 'Yakin ingin logout?',

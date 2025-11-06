@@ -10,14 +10,15 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['role']) || $_SESSION['role']
 
 $admin_id = $_SESSION['user_id'];
 
-// Proses AJAX update status
+// Proses AJAX update status & catatan
 if (isset($_POST['update_status'])) {
     $id = (int)$_POST['id'];
     $status = $_POST['status'];
+    $catatan = trim($_POST['catatan'] ?? '');
 
-    $stmt = $conn->prepare("UPDATE orders SET status = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE orders SET status = ?, catatan_pengiriman = ? WHERE id = ?");
     if ($stmt) {
-        $stmt->bind_param("si", $status, $id);
+        $stmt->bind_param("ssi", $status, $catatan, $id);
         echo $stmt->execute() ? "success" : "error: " . $stmt->error;
         $stmt->close();
     } else {
@@ -625,6 +626,7 @@ if ($stmt) {
                         <th>Pembayaran</th>
                         <th>Alamat Pengiriman</th>
                         <th>Status</th>
+                        <th>Catatan</th>
                         <th>Aksi</th>
                       </tr>
                     </thead>
@@ -654,6 +656,9 @@ if ($stmt) {
                           <td style="max-width: 200px;">
                             <small><?= htmlspecialchars($row['shipping_address'] ?? '-') ?></small>
                           </td>
+                        <td><?= !empty($row['catatan_pengiriman']) 
+                        ? nl2br(htmlspecialchars($row['catatan_pengiriman'])) 
+                        : '<span class="text-muted">Belum ada</span>'; ?></td>
                           <td>
                             <span class="status-badge status-<?= htmlspecialchars($row['status']) ?>">
                               <?php
@@ -688,6 +693,10 @@ if ($stmt) {
                                 <li><button class="dropdown-item" onclick="updateStatus(<?= $row['id'] ?>, 'cancelled')">
                                   <i class="fas fa-times-circle text-danger"></i> Cancelled
                                 </button></li>
+                                <button class="btn btn-warning" style="border-radius:25px; font-size:0.85rem; font-weight:600;"
+                                onclick="openCatatanModal(<?= $row['id'] ?>, '<?= htmlspecialchars($row['catatan_pengiriman'] ?? '') ?>')">
+                                <i class="fas fa-sticky-note me-1"></i> Catatan
+                              </button>
                               </ul>
                             </div>
                           </td>
@@ -739,6 +748,27 @@ if ($stmt) {
   </div>
 </div>
 
+<!-- Modal Catatan Pengiriman -->
+<div class="modal fade" id="modalCatatan" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="fas fa-sticky-note me-2"></i>Catatan Pengiriman</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="catatanOrderId">
+        <textarea id="catatanText" class="form-control" rows="5" placeholder="Tuliskan catatan pengiriman..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-primary" onclick="simpanCatatan()">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 function updateStatus(id, status) {
@@ -784,6 +814,36 @@ function updateStatus(id, status) {
     showNotification('Terjadi kesalahan: ' + err, 'error');
   });
 }
+
+function openCatatanModal(orderId, currentNote) {
+  document.getElementById('catatanOrderId').value = orderId;
+  document.getElementById('catatanText').value = currentNote || '';
+  new bootstrap.Modal(document.getElementById('modalCatatan')).show();
+}
+
+function simpanCatatan() {
+  const id = document.getElementById('catatanOrderId').value;
+  const catatan = document.getElementById('catatanText').value;
+
+  const formData = new FormData();
+  formData.append('update_status', true);
+  formData.append('id', id);
+  formData.append('status', document.querySelector(`#row-${id} .status-badge`).className.split('status-')[1]);
+  formData.append('catatan', catatan);
+
+  fetch(window.location.href, { method: 'POST', body: formData })
+    .then(r => r.text())
+    .then(res => {
+      if (res.trim() === "success") {
+        showNotification('Catatan pengiriman berhasil disimpan!', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('modalCatatan')).hide();
+      } else {
+        showNotification('Gagal menyimpan catatan: ' + res, 'error');
+      }
+    })
+    .catch(err => showNotification('Terjadi kesalahan: ' + err, 'error'));
+}
+
 
 // Search filter dengan highlight
 document.getElementById('searchInput').addEventListener('input', function() {

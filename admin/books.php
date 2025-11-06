@@ -4,6 +4,13 @@ checkRole('admin');
 include '../koneksi.php';
 
 // ===============================
+// 🔢 STATISTIK UTAMA
+// ===============================
+$totalUser = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM users WHERE role = 'user'"))['total'];
+$totalBuku = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM books"))['total'];
+$totalTransaksi = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM orders"))['total'];
+
+// ===============================
 // 🔍 BAGIAN 1: AJAX UNTUK LIVE SEARCH + PAGINATION + FILTERING
 // ===============================
 if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
@@ -147,11 +154,13 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         }
     }
 
+    
+
     // Pagination links
     $totalPages = ceil($total / $limit);
     if ($totalPages > 1) {
-        echo "<div class='col-12 mt-4 d-flex justify-content-between align-items-center'>";
-        echo "<div class='text-muted'>Menampilkan " . (($page - 1) * $limit + 1) . " - " . min($page * $limit, $total) . " dari $total buku</div>";
+        echo "<div class='col-12 mt-4 d-flex justify-content-between align-items-center flex-wrap'>";
+        echo "<div class='text-muted mb-2 mb-md-0'>Menampilkan " . (($page - 1) * $limit + 1) . " - " . min($page * $limit, $total) . " dari $total buku</div>";
         echo "<nav><ul class='pagination mb-0'>";
         
         // Previous button
@@ -226,9 +235,132 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+[data-theme="dark"] {
+    --light-bg: #1a1a1a;
+    --primary-color: #5dade2;
+    --secondary-color: #34495e;
+    --card-bg: #2d2d2d;
+    --text-color: #e0e0e0;
+    --text-muted: #a0a0a0;
+    --border-color: #404040;
+    --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
 body { 
     background-color: var(--light-bg);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+[data-theme="dark"] body {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .card {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .filter-section,
+[data-theme="dark"] .bulk-actions {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+    background-color: #383838;
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+    background-color: #404040;
+    color: var(--text-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(93, 173, 226, 0.25);
+}
+
+[data-theme="dark"] .form-control::placeholder {
+    color: #888;
+}
+
+[data-theme="dark"] .input-group-text {
+    background-color: #383838;
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .btn-outline-secondary {
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .btn-outline-secondary:hover {
+    background-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+[data-theme="dark"] .page-link {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .page-link:hover {
+    background-color: var(--border-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+[data-theme="dark"] .page-item.disabled .page-link {
+    background-color: #2d2d2d;
+    color: #666;
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] h2,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6 {
+    color: var(--text-color);
+}
+
+.theme-toggle {
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
 }
 
 .navbar-brand {
@@ -251,6 +383,10 @@ body {
 .book-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .book-card:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
 }
 
 .book-image {
@@ -302,6 +438,7 @@ body {
     padding: 15px;
     margin-bottom: 20px;
     box-shadow: var(--card-shadow);
+    transition: background-color 0.3s ease;
 }
 
 .btn-group .btn {
@@ -335,6 +472,10 @@ body {
     z-index: 9999;
 }
 
+[data-theme="dark"] .loading-overlay {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
 .spinner-border {
     width: 3rem;
     height: 3rem;
@@ -348,6 +489,10 @@ body {
     background-color: rgba(52, 152, 219, 0.1);
 }
 
+[data-theme="dark"] .selection-mode .book-card.selected {
+    background-color: rgba(93, 173, 226, 0.2);
+}
+
 .selection-mode .book-card .selection-checkbox {
     display: block;
 }
@@ -358,6 +503,9 @@ body {
     left: 10px;
     z-index: 10;
     display: none;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
 }
 
 .bulk-actions {
@@ -367,6 +515,7 @@ body {
     padding: 15px;
     margin-bottom: 20px;
     box-shadow: var(--card-shadow);
+    transition: background-color 0.3s ease;
 }
 
 .bulk-actions.show {
@@ -390,6 +539,11 @@ body {
     .search-box {
         max-width: 100%;
     }
+    
+    .theme-toggle {
+        font-size: 1rem;
+        padding: 0.3rem;
+    }
 }
 </style>
 </head>
@@ -410,11 +564,48 @@ body {
         <li class="nav-item"><a class="nav-link" href="../admin/order_list.php"><i class="bi bi-receipt me-1"></i>Pesanan</a></li>
         <li class="nav-item"><a class="nav-link" href="../kategori/index.php"><i class="bi bi-tags me-1"></i>Kelola Kategori</a></li>
         <li class="nav-item"><a class="nav-link" href="../admin/edit_about.php"><i class="bi bi-info-circle me-1"></i>Edit About Us</a></li>
+        <li class="nav-item">
+            <span class="nav-link theme-toggle" id="themeToggle" title="Toggle Dark Mode">
+                <i class="bi bi-moon-fill" id="themeIcon"></i>
+            </span>
+        </li>
         <li class="nav-item"><a class="nav-link text-danger" href="../logout.php"><i class="bi bi-box-arrow-right me-1"></i>Logout</a></li>
       </ul>
     </div>
   </div>
 </nav>
+
+<!-- Statistik Utama -->
+<div class="row text-center mb-4">
+  <div class="col-md-4 mb-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <i class="bi bi-people display-6 text-primary"></i>
+        <h5 class="mt-2 mb-1">Total User</h5>
+        <h3 class="fw-bold"><?= $totalUser ?></h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <i class="bi bi-book display-6 text-success"></i>
+        <h5 class="mt-2 mb-1">Total Buku</h5>
+        <h3 class="fw-bold"><?= $totalBuku ?></h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <i class="bi bi-receipt display-6 text-warning"></i>
+        <h5 class="mt-2 mb-1">Total Transaksi</h5>
+        <h3 class="fw-bold"><?= $totalTransaksi ?></h3>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
@@ -431,8 +622,8 @@ body {
 
   <!-- Bulk Actions -->
   <div id="bulkActions" class="bulk-actions">
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div class="mb-2 mb-md-0">
             <span id="selectedCount">0</span> buku dipilih
         </div>
         <div class="d-flex gap-2">
@@ -509,6 +700,41 @@ let currentPage = 1;
 let selectionMode = false;
 let selectedBooks = new Set();
 
+// Theme Management
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+let currentTheme = 'light';
+
+// Initialize theme on page load
+function initTheme() {
+    // In a real app, you might use localStorage to persist theme
+    // const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = 'light';
+    currentTheme = savedTheme;
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    updateThemeIcon();
+}
+
+function updateThemeIcon() {
+    if (currentTheme === 'dark') {
+        themeIcon.className = 'bi bi-sun-fill';
+        themeToggle.setAttribute('title', 'Switch to Light Mode');
+    } else {
+        themeIcon.className = 'bi bi-moon-fill';
+        themeToggle.setAttribute('title', 'Switch to Dark Mode');
+    }
+}
+
+function toggleTheme() {
+    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    updateThemeIcon();
+    // In a real app, save to localStorage:
+    // localStorage.setItem('theme', currentTheme);
+}
+
+themeToggle.addEventListener('click', toggleTheme);
+
 // Fungsi load buku
 function loadBooks(page = 1) {
   const keyword = document.getElementById('searchInput').value.trim();
@@ -528,6 +754,9 @@ function loadBooks(page = 1) {
       if (selectionMode) {
         attachSelectionListeners();
       }
+      
+      // Scroll to top of book container
+      document.getElementById('bookContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
     })
     .catch(() => {
       document.getElementById('bookContainer').innerHTML =
@@ -558,6 +787,7 @@ document.getElementById('toggleSelection').addEventListener('click', function() 
     this.innerHTML = '<i class="bi bi-check-square me-1"></i>Pilih';
     selectedBooks.clear();
     updateSelectedCount();
+    loadBooks(currentPage);
   }
 });
 
@@ -587,7 +817,8 @@ function attachSelectionListeners() {
       
       item.querySelector('.position-relative').appendChild(checkbox);
       
-      checkbox.addEventListener('change', function() {
+      checkbox.addEventListener('change', function(e) {
+        e.stopPropagation();
         if (this.checked) {
           selectedBooks.add(bookId);
           card.classList.add('selected');
@@ -600,7 +831,9 @@ function attachSelectionListeners() {
       
       // Toggle selection on card click
       card.addEventListener('click', function(e) {
-        if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'I') {
+        // Don't toggle if clicking on links or buttons
+        if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON' && 
+            e.target.tagName !== 'I' && !e.target.classList.contains('selection-checkbox')) {
           checkbox.checked = !checkbox.checked;
           checkbox.dispatchEvent(new Event('change'));
         }
@@ -619,29 +852,49 @@ function updateSelectedCount() {
 
 // Bulk delete
 document.getElementById('bulkDelete').addEventListener('click', function() {
-  if (selectedBooks.size === 0) return;
+  if (selectedBooks.size === 0) {
+    alert('Pilih buku yang ingin dihapus terlebih dahulu.');
+    return;
+  }
   
   if (confirm(`Yakin ingin menghapus ${selectedBooks.size} buku yang dipilih?`)) {
     // In a real implementation, you would send an AJAX request to delete the books
-    // For now, we'll just show a message
+    // Example:
+    // fetch('books/bulk_delete.php', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ ids: Array.from(selectedBooks) })
+    // })
+    // .then(res => res.json())
+    // .then(data => {
+    //   if (data.success) {
+    //     alert('Berhasil menghapus buku.');
+    //     // Reset selection and reload
+    //     selectionMode = false;
+    //     document.body.classList.remove('selection-mode');
+    //     document.getElementById('bulkActions').classList.remove('show');
+    //     document.getElementById('toggleSelection').innerHTML = '<i class="bi bi-check-square me-1"></i>Pilih';
+    //     selectedBooks.clear();
+    //     updateSelectedCount();
+    //     loadBooks(currentPage);
+    //   }
+    // });
+    
     alert(`Fitur hapus massal untuk ${selectedBooks.size} buku akan segera tersedia.`);
-    // After successful deletion:
-    // selectionMode = false;
-    // document.body.classList.remove('selection-mode');
-    // document.getElementById('bulkActions').classList.remove('show');
-    // document.getElementById('toggleSelection').innerHTML = '<i class="bi bi-check-square me-1"></i>Pilih';
-    // selectedBooks.clear();
-    // updateSelectedCount();
-    // loadBooks(currentPage);
   }
 });
 
 // Bulk export
 document.getElementById('bulkExport').addEventListener('click', function() {
-  if (selectedBooks.size === 0) return;
+  if (selectedBooks.size === 0) {
+    alert('Pilih buku yang ingin diexport terlebih dahulu.');
+    return;
+  }
   
   // In a real implementation, you would send an AJAX request to export the books
-  // For now, we'll just show a message
+  // Example:
+  // window.location.href = `books/export.php?ids=${Array.from(selectedBooks).join(',')}`;
+  
   alert(`Fitur export massal untuk ${selectedBooks.size} buku akan segera tersedia.`);
 });
 
@@ -666,7 +919,8 @@ document.getElementById('resetFilters').addEventListener('click', () => {
   loadBooks(1);
 });
 
-// Load pertama kali
+// Initialize theme and load books on page load
+initTheme();
 loadBooks();
 </script>
 </body>
