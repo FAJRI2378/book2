@@ -1,0 +1,12 @@
+     > SELECT kota.id_kota, kota.nama_kota, propinsi.nama_propinsi 
+    -> FROM kota RIGHT JOIN propinsi 
+    -> ON kota.id_propinsi = propinsi.id_propinsi;
++---------+------------+---------------+
+| id_kota | nama_kota  | nama_propinsi |
++---------+------------+---------------+
+| kota01  | Bandung    | Jawa Barat    |
+| kota02  | Surabaya   | Jawa Timur    |
+| NULL    | NULL       | NULL          |
+| kota04  | Kendal     | Jawa Tengah   |
++---------+------------+---------------+
+4 rows in set (0.00 sec)

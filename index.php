@@ -400,7 +400,7 @@ $('#languageSelect').on('change', function() {
   translatePage(lang);
 });
 
-function translatePage(lang) {
+function translatePage(lang) { 
   $('[placeholder], option, button, a, h4, h5, p, span').each(function() {
     let text = $(this).text().trim();
     let placeholder = $(this).attr('placeholder');
