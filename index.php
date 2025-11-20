@@ -46,14 +46,41 @@ while ($row = $result->fetch_assoc()) $categories[] = $row;
 // ==============================
 // 🔍 AJAX FILTER & SEARCH
 // ==============================
+// ==============================
+// 🔍 AJAX FILTER & SEARCH + PAGINATION
+// ==============================
 if (isset($_GET['ajax_filter'])) {
     $search = trim($_GET['search'] ?? '');
     $category = $_GET['category'] ?? '';
     $sort = $_GET['sort'] ?? '';
     $min_price = $_GET['min_price'] ?? '';
     $max_price = $_GET['max_price'] ?? '';
-    $rating = isset($_GET['rating']) ? (int)$_GET['rating'] : 0; // ⭐ TAMBAHAN RATING FILTER
+    $rating = isset($_GET['rating']) ? (int)$_GET['rating'] : 0;
+    $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $limit = 4; // jumlah buku per halaman
+    $offset = ($page - 1) * $limit;
 
+    // --- hitung total buku ---
+    $countQuery = "
+        SELECT COUNT(DISTINCT books.id) AS total
+        FROM books
+        JOIN categories ON books.category_id = categories.id
+        LEFT JOIN reviews rv ON books.id = rv.book_id
+        WHERE 1=1
+    ";
+
+    if ($search) {
+        $searchEsc = $conn->real_escape_string($search);
+        $countQuery .= " AND (books.title LIKE '%$searchEsc%' OR books.author LIKE '%$searchEsc%')";
+    }
+    if ($category !== '') $countQuery .= " AND categories.id = " . intval($category);
+    if ($min_price !== '' && $max_price !== '') $countQuery .= " AND books.price BETWEEN " . intval($min_price) . " AND " . intval($max_price);
+
+    $countResult = $conn->query($countQuery);
+    $totalBooks = ($countResult && $countResult->num_rows > 0) ? $countResult->fetch_assoc()['total'] : 0;
+    $totalPages = ceil($totalBooks / $limit);
+
+    // --- query data buku utama ---
     $query = "
         SELECT books.*, categories.name AS category,
                IFNULL(AVG(rv.rating), 0) AS avg_rating,
@@ -68,43 +95,24 @@ if (isset($_GET['ajax_filter'])) {
         $searchEsc = $conn->real_escape_string($search);
         $query .= " AND (books.title LIKE '%$searchEsc%' OR books.author LIKE '%$searchEsc%')";
     }
-
-    if ($category !== '') {
-        $query .= " AND categories.id = " . intval($category);
-    }
-
-    if ($min_price !== '' && $max_price !== '') {
-        $query .= " AND books.price BETWEEN " . intval($min_price) . " AND " . intval($max_price);
-    }
+    if ($category !== '') $query .= " AND categories.id = " . intval($category);
+    if ($min_price !== '' && $max_price !== '') $query .= " AND books.price BETWEEN " . intval($min_price) . " AND " . intval($max_price);
 
     $query .= " GROUP BY books.id ";
+    if ($rating > 0) $query .= " HAVING avg_rating >= $rating ";
 
-    // ⭐ TAMBAHAN FILTER RATING
-    if ($rating > 0) {
-        $query .= " HAVING avg_rating >= $rating ";
+    switch ($sort) {
+        case 'low_high': $query .= " ORDER BY books.price ASC"; break;
+        case 'high_low': $query .= " ORDER BY books.price DESC"; break;
+        case 'newest': $query .= " ORDER BY books.id DESC"; break;
+        case 'bestseller': $query .= " ORDER BY books.sold_count DESC"; break;
+        default: $query .= " ORDER BY books.title ASC";
     }
 
-    // Urutkan
-switch ($sort) {
-    case 'low_high':
-        $query .= " ORDER BY books.price ASC";
-        break;
-    case 'high_low':
-        $query .= " ORDER BY books.price DESC";
-        break;
-    case 'newest':
-        $query .= " ORDER BY books.id DESC"; // ID terbaru
-        break;
-    case 'bestseller':
-        // Misal ada kolom 'sold_count' di tabel books
-        $query .= " ORDER BY books.sold_count DESC";
-        break;
-    default:
-        $query .= " ORDER BY books.title ASC";
-}
-
+    $query .= " LIMIT $limit OFFSET $offset"; // 🔹 ION LIMIT
 
     $result = $conn->query($query);
+
 
     if ($result->num_rows == 0) {
         echo '<div class="no-books" data-aos="fade-up">
@@ -119,38 +127,75 @@ switch ($sort) {
             $stars = str_repeat('⭐', floor($rating));
             if ($rating > floor($rating)) $stars .= '✩';
 
-            echo '<div class="col-sm-6 col-md-4 col-lg-3" data-aos="zoom-in" data-aos-duration="800">
-                    <div class="card book-card h-100">
-                      <img src="'.(!empty($row['image'])?'uploads/'.htmlspecialchars($row['image']):'assets/no-image.png').'" class="card-img-top" alt="'.htmlspecialchars($row['title']).'">
-                      <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">'.htmlspecialchars($row['title']).'</h5>
-                        <p class="card-text"><i class="fas fa-user me-1"></i>'.htmlspecialchars($row['author']).'</p>
-                        <p class="card-text"><i class="fas fa-tag me-1"></i>'.htmlspecialchars($row['category']).'</p>
-                        <p class="card-text mb-1"><strong class="price-tag">Rp '.number_format($row['price'],0,',','.').'</strong></p>
-                        <p class="text-warning mb-2">'.$stars.' 
-                            <small class="text-muted">('.number_format($rating,1).'/5 dari '.$row['total_review'].' ulasan)</small>
-                        </p>
+            echo '
+            <div class="col-sm-6 col-md-4 col-lg-3" data-aos="zoom-in" data-aos-duration="800">
+              <div class="card book-card h-100">
+                <img src="'.(!empty($row['image']) ? 'uploads/'.htmlspecialchars($row['image']) : 'assets/no-image.png').'" class="card-img-top" alt="'.htmlspecialchars($row['title']).'">
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title">'.htmlspecialchars($row['title']).'</h5>
+                  <p class="card-text"><i class="fas fa-user me-1"></i>'.htmlspecialchars($row['author']).'</p>
+                  <p class="card-text"><i class="fas fa-tag me-1"></i>'.htmlspecialchars($row['category']).'</p>
+                  <p class="card-text"><i class="fas fa-boxes me-1"></i>Stok: '.intval($row['stock']).'</p>
+                  <p class="card-text mb-2"><strong>Rp '.number_format($row['price'], 0, ',', '.').'</strong></p>
+                  <p class="text-warning mb-2 d-none">'.$stars.'</p>
+                   <small class="text-muted d-none">('.number_format($rating,1).' dari '.$row['total_review'].' ulasan)</small>
+                </div>
+                <div class="mt-auto">
+                  <form method="POST" action="wishlist_action.php" class="mt-1 d-none">
+                    <input type="hidden" name="book_id" value="'.$row['id'].'">
+                    <button type="submit" class="btn btn-outline-warning w-100 mb-2">
+                    <i class="fas fa-heart"></i> Tambah ke Wishlist
+                    </button>
+                  </form>  
+            ';
 
-                        <div class="mt-auto">
-                          <form method="POST" action="wishlist_action.php" class="mt-1">
-                              <input type="hidden" name="book_id" value="'.$row['id'].'">
-                              <button type="submit" class="btn btn-outline-warning w-100 mb-2">
-                                <i class="fas fa-heart"></i> Tambah ke Wishlist
-                              </button>
-                          </form>';
 
-            if ($row['stock'] > 0) {
-                echo '<form method="POST" action="cart.php">
+                   $currentInCart = $_SESSION['cart'][$row['id']] ?? 0;
+
+                if ($row['stock'] > 0) {
+                    echo '
+                    <form method="POST" action="cart.php" class="add-to-cart-form">
                         <input type="hidden" name="book_id" value="'.$row['id'].'">
-                        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-cart-plus me-1"></i>Tambah ke Keranjang</button>
-                      </form>';
-            } else {
-                echo '<button disabled class="btn btn-secondary w-100"><i class="fas fa-ban me-1"></i>Stok Habis</button>';
-            }
+                        <button 
+                            type="submit" 
+                            class="btn btn-primary w-100 add-cart-btn"
+                            data-stock="'.$row['stock'].'"
+                            data-current="'.$currentInCart.'"
+                            onclick="return cekKeranjang(this)"
+                        >
+                            <i class="fas fa-cart-plus me-1"></i> Tambah ke Keranjang
+                        </button>
+                    </form>';
+                } else {
+                    echo '
+                    <button class="btn btn-secondary w-100" disabled>
+                        Stok Habis
+                    </button>';
+                }
 
-            echo '</div></div></div></div>';
+        echo '
+            </div>
+          </div>
+        </div>
+        ';
+        
+
         }
         echo '</div>';
+
+        // 🔹 Tampilkan navigasi pagination
+        if ($totalPages > 1) {
+            echo '<nav aria-label="Page navigation"><ul class="pagination justify-content-center mt-4">';
+            for ($i = 1; $i <= $totalPages; $i++) {
+                $active = ($i == $page) ? 'active' : '';
+                echo '<li class="page-item '.$active.'">
+                        <a class="page-link page-btn" href="#" data-page="'.$i.'">'.$i.'</a>
+                      </li>';
+            }
+            echo '</ul></nav>';
+        }
+
+
     }
     exit;
 }
@@ -187,6 +232,37 @@ body {
   padding-top: 80px;
   transition: 0.4s background, 0.4s color;
 }
+.pagination .page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+.pagination .page-link {
+  color: #0d6efd;
+  border-radius: 6px;
+  margin: 0 2px;
+}
+
+.pagination .page-link:hover {
+  background-color: #e8f0ff;
+}
+.pagination {
+  z-index: 99;
+  position: relative;
+  margin-bottom: 60px;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #0d6efd !important;
+  color: #fff !important;
+}
+
+.pagination .page-link {
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+}
+
 
 .navbar { background-color: var(--navbar-bg) !important; transition: 0.3s; }
 .book-card { border:none; border-radius:15px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.1); transition:0.3s; background: var(--card-bg); }
@@ -215,19 +291,19 @@ body {
         <li class="nav-item me-2"><a class="nav-link" href="cart_view.php"><i class="fas fa-shopping-cart me-1"></i>Keranjang</a></li>
         <li class="nav-item me-2"><a class="nav-link" href="orderan_saya.php"><i class="fas fa-box me-1"></i>Pesanan</a></li>
         <li class="nav-item me-2"><a class="nav-link" href="about.php"><i class="fas fa-circle-info me-1"></i>About</a></li>
-        <li class="nav-item me-2"><a class="nav-link" href="wishlist.php"><i class="fas fa-heart me-1"></i>Wishlist</a></li>
+        <!-- <li class="nav-item me-2"><a class="nav-link" href="wishlist.php"><i class="fas fa-heart me-1"></i>Wishlist</a></li> -->
         <li class="nav-item me-2 position-relative">
           <a id="chatDropdown" class="nav-link position-relative" href="chat.php?admin_id=2">
             <i class="fas fa-comments me-1"></i>Chat
           </a>
         </li>
         <li class="nav-item me-3">
-        <select id="languageSelect" class="form-select form-select-sm">
+        <!-- <select id="languageSelect" class="form-select form-select-sm">
           <option value="id">🇮🇩 Indonesia</option>
           <option value="en">🇬🇧 English</option>
         </select>
-      </li>
-        <li class="nav-item me-3">
+      </li> -->
+        <li class="nav-item me-3 d-none">
           <button id="toggleTheme" class="btn btn-outline-light btn-sm"><i class="fas fa-moon"></i></button>
         </li>
         <li class="nav-item"><button id="btn-logout" class="btn btn-sm btn-danger">Logout</button></li>
@@ -265,19 +341,24 @@ body {
         <input type="number" id="maxPrice" class="form-control" placeholder="Max">
       </div>
       <div class="col-md-2">
-      <select id="ratingFilter" class="form-select">
+      <!-- <select id="ratingFilter" class="form-select">
         <option value="">Semua Rating</option>
         <option value="5">⭐⭐⭐⭐⭐ (5)</option>
         <option value="4">⭐⭐⭐⭐ ke atas</option>
         <option value="3">⭐⭐⭐ ke atas</option>
         <option value="2">⭐⭐ ke atas</option>
         <option value="1">⭐ ke atas</option>
-      </select>
+      </select> -->
     </div>
 
       <div class="col-md-2 d-grid">
         <button id="applyFilter" class="btn btn-primary"><i class="fas fa-filter me-1"></i>Terapkan</button>
       </div>
+        <!-- <div class="col-md-2 d-flex justify-content-center align-items-center">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-filter me-1"></i> Terapkan
+          </button>
+        </div> -->
     </div>
   </div>
 
@@ -291,8 +372,7 @@ body {
 <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
 <script>
 AOS.init({ duration: 800, once: true });
-
-function loadBooks(){
+function loadBooks(page = 1){
   const params = {
     ajax_filter: 1,
     search: $('#searchInput').val(),
@@ -300,44 +380,58 @@ function loadBooks(){
     sort: $('#sortFilter').val(),
     min_price: $('#minPrice').val(),
     max_price: $('#maxPrice').val(),
-    rating: $('#ratingFilter').val() // ⭐ TAMBAHAN
+    rating: $('#ratingFilter').val(),
+    page: page
   };
+
   $.get('', params, function(data){
     $('#bookResults').html(data);
     AOS.refresh();
+
+    // 🔹 Aktifkan event pagination setelah data dimuat ulang
+    $('#bookResults').off('click', '.page-btn').on('click', '.page-btn', function(e){
+      e.preventDefault();
+      let selectedPage = $(this).data('page');
+      loadBooks(selectedPage);
+
+      // Scroll ke atas agar user lihat hasilnya
+      $('html, body').animate({scrollTop: $('#bookResults').offset().top - 80}, 500);
+    });
   });
 }
 
+
+
 // 🔔 Cek pesan baru dari admin tiap 5 detik
-setInterval(function(){
-  $.get('', {check_new_chat: true}, function(data){
-    let unread = parseInt(data);
-    let badge = $('#chatDropdown .chat-badge');
-    if (unread > 0) {
-      if (badge.length === 0) {
-        $('#chatDropdown').append('<span class="chat-badge">'+unread+'</span>');
-      } else {
-        badge.text(unread);
-      }
-      if (!window.lastUnread || unread > window.lastUnread) {
-        Swal.fire({
-          title: 'Pesan Baru!',
-          text: 'Admin mengirim pesan baru.',
-          icon: 'info',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 4000,
-          timerProgressBar: true
-        });
-        document.getElementById('notifSound').play().catch(()=>{});
-      }
-    } else {
-      badge.remove();
-    }
-    window.lastUnread = unread;
-  });
-}, 5000);
+// setInterval(function(){
+//   $.get('', {check_new_chat: true}, function(data){
+//     let unread = parseInt(data);
+//     let badge = $('#chatDropdown .chat-badge');
+//     if (unread > 0) {
+//       if (badge.length === 0) {
+//         $('#chatDropdown').append('<span class="chat-badge">'+unread+'</span>');
+//       } else {
+//         badge.text(unread);
+//       }
+//       if (!window.lastUnread || unread > window.lastUnread) {
+//         Swal.fire({
+//           title: 'Pesan Baru!',
+//           text: 'Admin mengirim pesan baru.',
+//           icon: 'info',
+//           toast: true,
+//           position: 'top-end',
+//           showConfirmButton: false,
+//           timer: 4000,
+//           timerProgressBar: true
+//         });
+//         document.getElementById('notifSound').play().catch(()=>{});
+//       }
+//     } else {
+//       badge.remove();
+//     }
+//     window.lastUnread = unread;
+//   });
+// }, 5000);
 
 $(document).ready(function(){
   loadBooks();
@@ -416,7 +510,36 @@ $(document).ready(function() {
   $('#languageSelect').val(savedLang);
   translatePage(savedLang);
 });
+document.addEventListener("DOMContentLoaded", function () {
+    const buttons = document.querySelectorAll(".add-cart-btn");
 
+    buttons.forEach(btn => {
+        btn.addEventListener("click", function (e) {
+
+            const stock = parseInt(btn.dataset.stock);
+
+            // Jika stok habis
+            if (stock <= 0) {
+                e.preventDefault();
+                alert("Stok habis! Tidak dapat menambahkan ke keranjang.");
+                return;
+            }
+
+         
+        });
+    });
+});
+function cekKeranjang(button) {
+    let stock = parseInt(button.dataset.stock);
+    let current = parseInt(button.dataset.current);
+
+    if (current + 1 > stock) {
+        alert("Jangann membeli barang ini lagii,stock sudah habiss!");
+        return false; // cegah submit
+    }
+
+    return true; // lanjutkan submit form
+}
 
 // 🚪 Logout
 $('#btn-logout').click(() => {
@@ -432,6 +555,7 @@ $('#btn-logout').click(() => {
     if(result.isConfirmed) window.location.href='logout.php';
   });
 });
+
 </script>
 </body>
 </html>

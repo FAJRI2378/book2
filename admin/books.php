@@ -24,8 +24,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     $where = [];
     if (!empty($search)) {
         $where[] = "(books.title LIKE '%$search%' 
-                  OR books.author LIKE '%$search%' 
-                  OR books.isbn LIKE '%$search%')";
+                  OR books.author LIKE '%$search%')";
     }
     
     if (!empty($category)) {
@@ -46,6 +45,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         'stock_desc' => 'books.stock DESC'
     ];
     $orderBy = $sortOptions[$sort] ?? 'books.id DESC';
+
 
     $total = mysqli_fetch_assoc(mysqli_query($conn, "
         SELECT COUNT(*) AS total 
@@ -128,9 +128,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         <span class="text-muted small book-stock">Stok: <?= $book['stock'] ?></span>
                     </div>
                     <div class="d-flex gap-2">
-                        <a href="books/view.php?id=<?= $book['id'] ?>" class="btn btn-outline-primary btn-sm flex-fill" title="Lihat Detail">
+                        <!-- <a href="books/view.php?id=<?= $book['id'] ?>" class="btn btn-outline-primary btn-sm flex-fill" title="Lihat Detail">
                             <i class="bi bi-eye"></i>
-                        </a>
+                        </a> -->
                         <a href="books/edit.php?id=<?= $book['id'] ?>" class="btn btn-warning btn-sm flex-fill" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </a>
@@ -563,8 +563,8 @@ body {
         <li class="nav-item"><a class="nav-link" href="../admin/chat/index.php"><i class="bi bi-chat-dots me-1"></i>Chat</a></li>
         <li class="nav-item"><a class="nav-link" href="../admin/order_list.php"><i class="bi bi-receipt me-1"></i>Pesanan</a></li>
         <li class="nav-item"><a class="nav-link" href="../kategori/index.php"><i class="bi bi-tags me-1"></i>Kelola Kategori</a></li>
-        <li class="nav-item"><a class="nav-link" href="../admin/edit_about.php"><i class="bi bi-info-circle me-1"></i>Edit About Us</a></li>
-        <li class="nav-item">
+        <!--     -->
+        <li class="nav-item d-none">
             <span class="nav-link theme-toggle" id="themeToggle" title="Toggle Dark Mode">
                 <i class="bi bi-moon-fill" id="themeIcon"></i>
             </span>
@@ -606,12 +606,12 @@ body {
   </div>
 </div>
 
-
+<!-- d-none -->
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
     <h2><i class="bi bi-book-half me-2"></i>Daftar Buku</h2>
     <div class="d-flex gap-2 mt-2 mt-md-0">
-        <button id="toggleSelection" class="btn btn-outline-secondary">
+        <button id="toggleSelection" class="btn btn-outline-secondary d-none">
             <i class="bi bi-check-square me-1"></i>Pilih
         </button>
         <a href="books/create.php" class="btn btn-success">
@@ -650,7 +650,7 @@ body {
                        placeholder="Cari judul, penulis, ISBN...">
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 d-none">
             <select id="categoryFilter" class="form-select">
                 <option value="">Semua Kategori</option>
                 <?php
@@ -661,7 +661,7 @@ body {
                 ?>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 d-none">
             <select id="sortFilter" class="form-select">
                 <option value="id_desc">Terbaru</option>
                 <option value="id_asc">Terlama</option>

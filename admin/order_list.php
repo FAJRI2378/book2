@@ -40,12 +40,18 @@ $stats = ['pending' => 0, 'confirmed' => 0, 'dalam_perjalanan' => 0, 'sampai' =>
 if ($stmt) {
     $stmt->execute();
     $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $orders[$row['username']][] = $row;
-        $stats[$row['status']]++;
-        $stats['total']++;
+   while ($row = $result->fetch_assoc()) {
+    $username = $row['username'] ?? 'Unknown User';
+    $status = $row['status'] ?? 'unknown';
+
+    if (!isset($stats[$status])) {
+        $stats[$status] = 0;
     }
-    $stmt->close();
+
+    $orders[$username][] = $row;
+    $stats[$status]++;
+    $stats['total']++;
+}
 }
 ?>
 <!DOCTYPE html>
@@ -625,8 +631,8 @@ if ($stmt) {
                         <th>Tanggal</th>
                         <th>Pembayaran</th>
                         <th>Alamat Pengiriman</th>
+                        <!-- <th>Catatan</th> -->
                         <th>Status</th>
-                        <th>Catatan</th>
                         <th>Aksi</th>
                       </tr>
                     </thead>
@@ -656,9 +662,12 @@ if ($stmt) {
                           <td style="max-width: 200px;">
                             <small><?= htmlspecialchars($row['shipping_address'] ?? '-') ?></small>
                           </td>
-                        <td><?= !empty($row['catatan_pengiriman']) 
-                        ? nl2br(htmlspecialchars($row['catatan_pengiriman'])) 
-                        : '<span class="text-muted">Belum ada</span>'; ?></td>
+                      <th style="display:none;">Catatan</th>
+                    <td style="display:none;">
+                      <?= !empty($row['catatan_pengiriman']) 
+                          ? nl2br(htmlspecialchars($row['catatan_pengiriman'])) 
+                          : '<span class="text-muted">Belum ada</span>'; ?>
+                    </td>
                           <td>
                             <span class="status-badge status-<?= htmlspecialchars($row['status']) ?>">
                               <?php
@@ -693,10 +702,10 @@ if ($stmt) {
                                 <li><button class="dropdown-item" onclick="updateStatus(<?= $row['id'] ?>, 'cancelled')">
                                   <i class="fas fa-times-circle text-danger"></i> Cancelled
                                 </button></li>
-                                <button class="btn btn-warning" style="border-radius:25px; font-size:0.85rem; font-weight:600;"
+                                <!-- <button class="btn btn-warning" style="border-radius:25px; font-size:0.85rem; font-weight:600;"
                                 onclick="openCatatanModal(<?= $row['id'] ?>, '<?= htmlspecialchars($row['catatan_pengiriman'] ?? '') ?>')">
                                 <i class="fas fa-sticky-note me-1"></i> Catatan
-                              </button>
+                              </button> -->
                               </ul>
                             </div>
                           </td>

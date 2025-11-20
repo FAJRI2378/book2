@@ -188,7 +188,7 @@ body::before {
 <div class="about-text mt-3" id="aboutText">
   <?php
     $rawText = htmlspecialchars($about['value']);
-    $limit = 800; // batas karakter sebelum "Read More"
+    $limit = 20000; // batas karakter sebelum "Read More"
 
     // Hapus HTML tapi pertahankan baris baru agar bisa diubah jadi <br>
     $plainText = strip_tags($about['value']);
@@ -205,9 +205,9 @@ body::before {
   ?>
 </div>
 
-  <?php if (strlen(strip_tags($about['value'])) > $limit): ?>
+  <!-- <?php if (strlen(strip_tags($about['value'])) > $limit): ?>
     <button id="readMoreBtn" class="btn btn-outline-primary mt-3">Baca Selengkapnya</button>
-  <?php endif; ?>
+  <?php endif; ?> -->
 </section>
 
 
@@ -257,9 +257,9 @@ body::before {
 
 
     <!-- PAGINATION -->
-  <?php if ($total_pages >= 1): ?>
+  <!-- <?php if ($total_pages >= 1): ?>
   <nav aria-label="Pagination" class="mt-5">
-    <ul class="pagination justify-content-center">
+    <ul class="pagination justify-content-center"> -->
 
       <!-- Tombol Sebelumnya -->
       <?php if ($page > 1): ?>

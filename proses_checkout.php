@@ -25,8 +25,10 @@ $result = mysqli_stmt_get_result($stmt);
 $book = mysqli_fetch_assoc($result);
 
 if (!$book || $book['stock'] < $jumlah) {
-    die("Stok tidak mencukupi.");
+    echo "<script>alert('Kamu membeli melebihi stock.Stok tidak mencukupi.'); window.location.href='cart_view.php';</script>";
+    exit;
 }
+
 
 // simpan ke orders dengan prepared statement
 $sql = "INSERT INTO orders 

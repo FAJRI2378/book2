@@ -157,6 +157,7 @@ if ($stmt) {
               <th><i class="fas fa-user me-1"></i>Username</th>
               <th><i class="fas fa-envelope me-1"></i>Email</th>
               <th><i class="fas fa-user-tag me-1"></i>Role</th>
+              <th><i class="fas fa-user-tag me-1"></i>Created_at</th>
             </tr>
           </thead>
           <tbody>
@@ -170,6 +171,17 @@ if ($stmt) {
                     <?= ucfirst(htmlspecialchars($user['role'])) ?>
                   </span>
                 </td>
+                <td>
+                  <?php
+                    // Ambil created_at dari database
+                    $stmt = $conn->prepare("SELECT created_at FROM users WHERE id = ?");
+                    $stmt->bind_param("i", $user['id']);
+                    $stmt->execute();
+                    $stmt->bind_result($created_at);
+                    $stmt->fetch();
+                    $stmt->close();
+                    echo htmlspecialchars($created_at);
+                  ?>
               </tr>
               <?php $no++; endforeach; ?>
           </tbody>

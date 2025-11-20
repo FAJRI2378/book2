@@ -15,16 +15,16 @@ $admin_id = $_SESSION['user_id'];
 // ==============================
 // 🧩 CEK CHAT BARU (UNTUK AJAX POLLING)
 // ==============================
-if (isset($_GET['check_new_chat'])) {
-    $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM chats WHERE receiver_id = ? AND is_read = 0");
-    $stmt->bind_param("i", $admin_id);
-    $stmt->execute();
-    $stmt->bind_result($unread);
-    $stmt->fetch();
-    $stmt->close();
-    echo $unread;
-    exit;
-}
+// if (isset($_GET['check_new_chat'])) {
+//     $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM chats WHERE receiver_id = ? AND is_read = 0");
+//     $stmt->bind_param("i", $admin_id);
+//     $stmt->execute();
+//     $stmt->bind_result($unread);
+//     $stmt->fetch();
+//     $stmt->close();
+//     echo $unread;
+//     exit;
+// }
 
 // ==============================
 // 👤 AMBIL SEMUA USER
@@ -92,7 +92,7 @@ $users = $conn->query("SELECT id, username FROM users WHERE role='user' ORDER BY
   <script>
     const searchInput = document.getElementById('searchUser');
     const userContainer = document.getElementById('userContainer');
-    const notifBadge = document.getElementById('notifBadge');
+    // const notifBadge = document.getElementById('notifBadge');
     let lastUnreadCount = 0;
 
     // ================================
@@ -110,36 +110,36 @@ $users = $conn->query("SELECT id, username FROM users WHERE role='user' ORDER BY
     // ================================
     // 🔔 CEK CHAT BARU (POLLING)
     // ================================
-    setInterval(() => {
-      $.get('', { check_new_chat: true }, function(data) {
-        const unread = parseInt(data);
-        if (unread > 0) {
-          notifBadge.style.display = 'inline-block';
-          notifBadge.textContent = unread;
+    // setInterval(() => {
+    //   $.get('', { check_new_chat: true }, function(data) {
+    //     const unread = parseInt(data);
+    //     if (unread > 0) {
+    //       notifBadge.style.display = 'inline-block';
+    //       notifBadge.textContent = unread;
 
-          // Kalau ada pesan baru dibanding sebelumnya, munculkan notifikasi
-          if (unread > lastUnreadCount) {
-            Swal.fire({
-              title: 'Pesan Baru!',
-              text: 'Ada pesan baru dari user.',
-              icon: 'info',
-              toast: true,
-              position: 'top-end',
-              showConfirmButton: false,
-              timer: 4000,
-              timerProgressBar: true
-            });
+    //       // Kalau ada pesan baru dibanding sebelumnya, munculkan notifikasi
+    //       if (unread > lastUnreadCount) {
+    //         Swal.fire({
+    //           title: 'Pesan Baru!',
+    //           text: 'Ada pesan baru dari user.',
+    //           icon: 'info',
+    //           toast: true,
+    //           position: 'top-end',
+    //           showConfirmButton: false,
+    //           timer: 4000,
+    //           timerProgressBar: true
+    //         });
 
-            // 🔊 Mainkan suara notifikasi
-            new Audio('../../assets/notify.mp3').play();
-          }
-        } else {
-          notifBadge.style.display = 'none';
-        }
+    //         // 🔊 Mainkan suara notifikasi
+    //         new Audio('../../assets/notify.mp3').play();
+    //       }
+    //     } else {
+    //       notifBadge.style.display = 'none';
+    //     }
 
-        lastUnreadCount = unread;
-      });
-    }, 5000); // cek tiap 5 detik
+    //     lastUnreadCount = unread;
+    //   });
+    // }, 5000); // cek tiap 5 detik
   </script>
 </body>
 </html>
